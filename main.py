@@ -37,33 +37,72 @@ def find_yaml_files(root_dir):
 
 
 def generate_config(yaml_path):
+    """
+    Generates a configuration file for a network device based on a YAML
+    definition
+
+    This function:
+    - Loads the device-specific YAML data
+    - Merges it with inherited variables from all applicable `vars.yaml` files
+    - Selects the appropriate base Jinja2 template based on device type
+    - Renders the configuration
+    - Writes the output to a `.txt` file in the corresponding structure
+
+    Args:
+        yaml_path (str): Full path to the device YAML file
+    """
+
     with open(yaml_path, "r") as file:
         device_data = yaml.safe_load(file) or {}
 
+    # Compute path relative to the root of the device YAMLs directory
     relative_path = os.path.relpath(yaml_path, Config.device_yamls_dir)
-    device_type = get_device_type(relative_path)
 
-    inherited_vars = load_vars_hierarchy(relative_path)
-    inherited_vars.update(device_data)
-    inherited_vars["device_type"] = device_type
+    # Merge inherited and device-specific variables
+    merged_vars = build_merged_vars(relative_path, device_data)
 
-    template_path = f"{device_type}/base.j2"
+    # Select template based on top-level device type (e.g. "cisco_ios")
+    template_path = f"{merged_vars['device_type']}/base.j2"
     try:
         template = env.get_template(template_path)
     except Exception as e:
         print(f"Error while loading template '{template_path}': {e}")
         return
 
-    rendered_config = template.render(inherited_vars)
+    # Render the final configuration using merged variables
+    rendered_config = template.render(merged_vars)
 
+    # Create the output path: same relative structure, but with .txt extension
     txt_name = os.path.splitext(relative_path)[0] + ".txt"
     output_path = os.path.join(Config.output_dir, txt_name)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
+    # Save the rendered configuration
     with open(output_path, "w") as file:
         file.write(rendered_config)
 
     print(f"Created: {output_path}")
+
+
+def build_merged_vars(relative_path, device_data):
+    """
+    Combines all inherited vars from the vars.yaml hierarchy with
+    device-specific data
+
+    Args:
+        relative_path (str): Path to the device YAML file relative to
+            device_yamls root
+        device_data (dict): The YAML data specific to the device
+
+    Returns:
+        dict: Final merged variables with deeper/explicit values overriding
+            general ones
+    """
+    merged_vars = load_vars_hierarchy(relative_path)
+    merged_vars.update(device_data)
+    device_type = get_device_type(relative_path)
+    merged_vars["device_type"] = device_type
+    return merged_vars
 
 
 def get_device_type(yaml_path):
