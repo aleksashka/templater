@@ -53,15 +53,11 @@ def generate_config(yaml_path):
         yaml_path (str): Full path to the device YAML file
     """
 
-    with open(yaml_path, "r") as file:
-        device_data = yaml.safe_load(file) or {}
-
     # Compute path relative to the root of the device YAMLs directory
     relative_path = os.path.relpath(yaml_path, Config.device_yamls_dir)
 
     # Merge inherited and device-specific variables
-    base_vars = load_vars_hierarchy(relative_path)
-    merged_vars = deep_merge_custom(base_vars, device_data)
+    merged_vars = load_vars_hierarchy(relative_path)
 
     # Add device_type key
     merged_vars["device_type"] = get_device_type(relative_path)
@@ -240,17 +236,16 @@ def get_device_type(yaml_path):
 def load_vars_hierarchy(yaml_path):
     """
     Loads and deeply merges all `vars.yaml` files found along the directory
-    hierarchy leading to a specific device YAML file
+    hierarchy leading to a specific device YAML file, including the device file
+    itself at the end
 
-    Supports advanced override features at any nesting level via
-    `deep_merge_custom`
-
-    Deeper levels override and modify higher-level defaults
+    Supports advanced override features via `deep_merge_custom`
 
     Example hierarchy:
     - device_yamls/vars.yaml (global)
     - device_yamls/cisco_ios/vars.yaml (vendor-specific)
     - device_yamls/cisco_ios/router/vars.yaml (role-specific)
+    - device_yamls/cisco_ios/router/new_york.yaml (device-specific)
 
     Args:
         yaml_path (str): Relative path (from device_yamls) to the device YAML
@@ -260,7 +255,7 @@ def load_vars_hierarchy(yaml_path):
     """
     merged_data = {}
 
-    # Normalize path and split into a list of directories
+    # Normalize path and split into list of directory parts
     path_parts = os.path.dirname(yaml_path).replace("\\", "/").split("/")
 
     # Walk from root to the device's subdirectory
@@ -273,6 +268,13 @@ def load_vars_hierarchy(yaml_path):
             with open(full_path, "r") as f:
                 data = yaml.safe_load(f) or {}
                 merged_data = deep_merge_custom(merged_data, data)
+
+    # Now apply the device's own YAML file
+    device_full_path = os.path.join(Config.device_yamls_dir, yaml_path)
+    if os.path.exists(device_full_path):
+        with open(device_full_path, "r") as f:
+            device_data = yaml.safe_load(f) or {}
+            merged_data = deep_merge_custom(merged_data, device_data)
 
     return merged_data
 
