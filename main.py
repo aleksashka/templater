@@ -1,4 +1,5 @@
 import os
+import copy
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -59,7 +60,11 @@ def generate_config(yaml_path):
     relative_path = os.path.relpath(yaml_path, Config.device_yamls_dir)
 
     # Merge inherited and device-specific variables
-    merged_vars = build_merged_vars(relative_path, device_data)
+    base_vars = load_vars_hierarchy(relative_path)
+    merged_vars = deep_merge_custom(base_vars, device_data)
+
+    # Add device_type key
+    merged_vars["device_type"] = get_device_type(relative_path)
 
     # Select template based on top-level device type (e.g. "cisco_ios")
     template_path = f"{merged_vars['device_type']}/base.j2"
@@ -82,6 +87,138 @@ def generate_config(yaml_path):
         file.write(rendered_config)
 
     print(f"Created: {output_path}")
+
+
+def deep_merge_custom(base: dict, override: dict) -> dict:
+    """
+    Entry point function to deeply merge two dictionaries with advanced control:
+
+    Supports:
+    - Recursive merging of nested dicts
+    - Full key removal via 'key: False' or 'key__remove: True'
+    - Partial removal from lists via 'key__remove: [items]'
+    - Nested key removal via '__delete_keys__' with dot notation
+
+    Args:
+        base (dict): Base dictionary
+        override (dict): Override dictionary
+
+    Returns:
+        dict: Merged dictionary
+    """
+    return recursive_merge_dicts(base, override)
+
+
+def recursive_merge_dicts(base: dict, override: dict) -> dict:
+    """
+    Recursively merge `override` dictionary into `base` dictionary with support
+    for:
+
+    - Removing keys via 'key: False' or 'key__remove: True'
+    - Removing specific list items via 'key__remove: [items]'
+    - Deleting nested keys via '__delete_keys__' list of dot-separated keys
+
+    Args:
+        base (dict): The base dictionary
+        override (dict): The overriding dictionary
+
+    Returns:
+        dict: A new dictionary representing the merged result
+    """
+    if not isinstance(base, dict) or not isinstance(override, dict):
+        # Non-dict types are fully replaced
+        return copy.deepcopy(override)
+
+    result = copy.deepcopy(base)
+
+    # Delete nested keys specified by '__delete_keys__'
+    delete_keys = override.get("__delete_keys__", [])
+    if delete_keys:
+        delete_keys_with_dot_notation(result, delete_keys)
+
+    # Handle keys with '__remove' suffix
+    handle_remove_keys(result, override)
+
+    # Remove keys with value False
+    remove_false_values(result, override)
+
+    # Merge other keys recursively or replace
+    for key, val in override.items():
+        if key == "__delete_keys__" or key.endswith("__remove") or val is False:
+            # These have already been processed above
+            continue
+
+        base_val = result.get(key)
+
+        if isinstance(base_val, dict) and isinstance(val, dict):
+            # Recursive merge for nested dicts
+            result[key] = recursive_merge_dicts(base_val, val)
+        elif isinstance(base_val, list) and isinstance(val, list):
+            # Replace lists entirely
+            result[key] = copy.deepcopy(val)
+        else:
+            # Override scalar or non-dict types
+            result[key] = copy.deepcopy(val)
+
+    return result
+
+
+def delete_keys_with_dot_notation(target: dict, keys: list):
+    """
+    Delete nested keys in `target` dictionary using dot-separated key paths
+
+    Args:
+        target (dict): The dictionary to delete keys from
+        keys (list): List of dotted key strings, e.g. ['bgp.neighbors.10.1.1.1']
+    """
+    for dotted_key in keys:
+        parts = dotted_key.split(".")
+        cur = target
+        for i, part in enumerate(parts):
+            if isinstance(cur, dict) and part in cur:
+                if i == len(parts) - 1:
+                    del cur[part]
+                else:
+                    cur = cur[part]
+            else:
+                break  # Key path does not exist; nothing to delete
+
+
+def handle_remove_keys(target: dict, override: dict):
+    """
+    Process keys ending with '__remove' in the override dictionary
+
+    - If override[key] is True, remove the whole base key
+    - If override[key] is a list and base key is a list, remove listed items from base list
+
+    Args:
+        target (dict): The base dictionary to modify
+        override (dict): The override dictionary containing removal instructions
+    """
+    for key in list(override.keys()):
+        if not key.endswith("__remove"):
+            continue
+
+        base_key = key.removesuffix("__remove")
+        val = override[key]
+
+        if val is True:
+            target.pop(base_key, None)
+        elif isinstance(val, list) and isinstance(target.get(base_key), list):
+            target[base_key] = [item for item in target[base_key] if item not in val]
+
+
+def remove_false_values(target: dict, override: dict):
+    """
+    Remove keys from `target` where override[key] is exactly False
+
+    Args:
+        target (dict): The base dictionary to modify
+        override (dict): The override dictionary
+    """
+    for key, val in override.items():
+        if val is False:
+            target.pop(key, None)
 
 
 def build_merged_vars(relative_path, device_data):
