@@ -66,8 +66,8 @@ def generate_config(yaml_path):
     template_path = f"{merged_vars['device_type']}/base.j2"
     try:
         template = env.get_template(template_path)
-    except Exception as e:
-        print(f"Error while loading template '{template_path}': {e}")
+    except Exception as error:
+        print(f"Error while loading template '{template_path}': {error}")
         return
 
     # Render the final configuration using merged variables
@@ -271,11 +271,11 @@ def load_vars_hierarchy(yaml_path):
     for path in yaml_files:
         if not os.path.exists(path):
             continue
-        with open(path, "r") as f:
+        with open(path, "r") as file:
             try:
-                data = yaml.safe_load(f) or {}
-            except yaml.scanner.ScannerError as e:
-                print(e, "Exiting due to YAML ScannerError!", sep="\n\n")
+                data = yaml.safe_load(file) or {}
+            except yaml.scanner.ScannerError as error:
+                print(error, "Exiting due to YAML ScannerError!", sep="\n\n")
                 exit()
             merged_data = deep_merge_custom(merged_data, data)
 
