@@ -239,39 +239,41 @@ def get_device_type(yaml_path):
 
 def load_vars_hierarchy(yaml_path):
     """
-    Loads and merges all `vars.yaml` files found along the directory hierarchy
-    leading to a specific device YAML file. Each deeper level overrides keys
-    from higher (more general) levels
+    Loads and deeply merges all `vars.yaml` files found along the directory
+    hierarchy leading to a specific device YAML file
 
-    For example:
+    Supports advanced override features at any nesting level via
+    `deep_merge_custom`
+
+    Deeper levels override and modify higher-level defaults
+
+    Example hierarchy:
     - device_yamls/vars.yaml (global)
     - device_yamls/cisco_ios/vars.yaml (vendor-specific)
     - device_yamls/cisco_ios/router/vars.yaml (role-specific)
 
     Args:
         yaml_path (str): Relative path (from device_yamls) to the device YAML
-            file
 
     Returns:
-        dict: Merged dictionary of variables with deeper levels overriding
-            higher ones
+        dict: Fully merged variable dictionary
     """
     merged_data = {}
 
     # Normalize path and split into a list of directories
     path_parts = os.path.dirname(yaml_path).replace("\\", "/").split("/")
 
-    # Walk from root to deepest subdirectory, merging vars.yaml at each level
+    # Walk from root to the device's subdirectory
     for i in range(len(path_parts) + 1):
         # Build path to vars.yaml at this level
         partial_path = os.path.join(*path_parts[:i], Config.vars_filename)
         full_path = os.path.join(Config.device_yamls_dir, partial_path)
 
         if os.path.exists(full_path):
-            # Load and merge if exists (deeper levels override higher ones)
             with open(full_path, "r") as f:
                 data = yaml.safe_load(f) or {}
-                merged_data.update(data)
+                merged_data = deep_merge_custom(merged_data, data)
+
     return merged_data
 
 
