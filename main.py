@@ -253,28 +253,27 @@ def load_vars_hierarchy(yaml_path):
     Returns:
         dict: Fully merged variable dictionary
     """
-    merged_data = {}
-
-    # Normalize path and split into list of directory parts
+    # Build list of all YAML files to merge
+    yaml_files = []
     path_parts = os.path.dirname(yaml_path).replace("\\", "/").split("/")
-
-    # Walk from root to the device's subdirectory
     for i in range(len(path_parts) + 1):
         # Build path to vars.yaml at this level
         partial_path = os.path.join(*path_parts[:i], Config.vars_filename)
         full_path = os.path.join(Config.device_yamls_dir, partial_path)
+        yaml_files.append(full_path)
 
-        if os.path.exists(full_path):
-            with open(full_path, "r") as f:
-                data = yaml.safe_load(f) or {}
-                merged_data = deep_merge_custom(merged_data, data)
+    # Add the device YAML file itself at the end
+    device_yaml_full_path = os.path.join(Config.device_yamls_dir, yaml_path)
+    yaml_files.append(device_yaml_full_path)
 
-    # Now apply the device's own YAML file
-    device_full_path = os.path.join(Config.device_yamls_dir, yaml_path)
-    if os.path.exists(device_full_path):
-        with open(device_full_path, "r") as f:
-            device_data = yaml.safe_load(f) or {}
-            merged_data = deep_merge_custom(merged_data, device_data)
+    # Merge all YAML files in order
+    merged_data = {}
+    for path in yaml_files:
+        if not os.path.exists(path):
+            continue
+        with open(path, "r") as f:
+            data = yaml.safe_load(f) or {}
+            merged_data = deep_merge_custom(merged_data, data)
 
     return merged_data
 
