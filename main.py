@@ -221,27 +221,6 @@ def remove_false_values(target: dict, override: dict):
             target.pop(key, None)
 
 
-def build_merged_vars(relative_path, device_data):
-    """
-    Combines all inherited vars from the vars.yaml hierarchy with
-    device-specific data
-
-    Args:
-        relative_path (str): Path to the device YAML file relative to
-            device_yamls root
-        device_data (dict): The YAML data specific to the device
-
-    Returns:
-        dict: Final merged variables with deeper/explicit values overriding
-            general ones
-    """
-    merged_vars = load_vars_hierarchy(relative_path)
-    merged_vars.update(device_data)
-    device_type = get_device_type(relative_path)
-    merged_vars["device_type"] = device_type
-    return merged_vars
-
-
 def get_device_type(yaml_path):
     """
     Extracts the top-level directory name from a relative YAML path,
