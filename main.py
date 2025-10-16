@@ -1,12 +1,23 @@
 import os
 import copy
+import logging
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from logger import Log
 from config import Config
 
 
+logging.basicConfig(
+    level=Config.log_level,
+    style=Config.log_style,
+    format=Config.log_format,
+    datefmt=Config.log_datefmt,
+)
+
+
+log = Log()
 env = Environment(
     loader=FileSystemLoader(Config.templates_dir),
     autoescape=select_autoescape(disabled_extensions=("j2", "txt", "yaml")),
@@ -58,6 +69,8 @@ def generate_config(yaml_path):
 
     # Merge inherited and device-specific variables
     merged_vars = load_vars_hierarchy(relative_path)
+    if merged_vars is None:
+        return
 
     # Add device_type key
     merged_vars["device_type"] = get_device_type(relative_path)
@@ -67,7 +80,7 @@ def generate_config(yaml_path):
     try:
         template = env.get_template(template_path)
     except Exception as error:
-        print(f"Error while loading template '{template_path}': {error}")
+        log.error(f"Error while loading template '{template_path}': {error}")
         return
 
     # Render the final configuration using merged variables
@@ -82,7 +95,7 @@ def generate_config(yaml_path):
     with open(output_path, "w") as file:
         file.write(rendered_config)
 
-    print(f"Created: {output_path}")
+    log.info(f"Created: {output_path}")
 
 
 def deep_merge_custom(base: dict, override: dict) -> dict:
@@ -233,7 +246,7 @@ def get_device_type(yaml_path):
     return device_type
 
 
-def load_vars_hierarchy(yaml_path):
+def load_vars_hierarchy(yaml_path: str) -> dict | None:
     """
     Loads and deeply merges all `vars.yaml` files found along the directory
     hierarchy leading to a specific device YAML file, including the device file
@@ -267,6 +280,7 @@ def load_vars_hierarchy(yaml_path):
     yaml_files.append(device_yaml_full_path)
 
     # Merge all YAML files in order
+    log.debug(device_yaml_full_path, b=1)
     merged_data = {}
     for path in yaml_files:
         if not os.path.exists(path):
@@ -275,9 +289,15 @@ def load_vars_hierarchy(yaml_path):
             try:
                 data = yaml.safe_load(file) or {}
             except yaml.scanner.ScannerError as error:
-                print(error, "Exiting due to YAML ScannerError!", sep="\n\n")
-                exit()
+                log.error(f"YAML ScannerError: {error}")
+                return
+            log.debug(path, b=2, a=3)
+            log.debug("old data", yaml.dump(merged_data), a=3)
+            log.debug("new data", yaml.dump(data), a=3)
             merged_data = deep_merge_custom(merged_data, data)
+            log.debug("merged data", yaml.dump(merged_data), path)
+    log.info(a=3)
+    log.info(f"Processed: {device_yaml_full_path}")
 
     return merged_data
 
