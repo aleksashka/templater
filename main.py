@@ -1,6 +1,7 @@
 import os
 import copy
 import logging
+from typing import Generator
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -29,7 +30,7 @@ def main():
         generate_config(yaml_path)
 
 
-def find_yaml_files(root_dir):
+def find_yaml_files(root_dir: str) -> Generator[str, None, None]:
     """
     Recursively walks through the directory tree starting from `root_dir`,
     yielding paths to all `.yaml` files except those named as configured in
@@ -48,7 +49,7 @@ def find_yaml_files(root_dir):
                     yield os.path.join(dirpath, file)
 
 
-def generate_config(yaml_path):
+def generate_config(yaml_path: str):
     """
     Generates a configuration file for a network device based on a YAML
     definition
@@ -230,7 +231,7 @@ def remove_false_values(target: dict, override: dict):
             target.pop(key, None)
 
 
-def get_device_type(yaml_path):
+def get_device_type(yaml_path: str) -> str:
     """
     Extracts the top-level directory name from a relative YAML path,
     which represents the base device type (e.g., 'cisco_ios', 'juniper')
