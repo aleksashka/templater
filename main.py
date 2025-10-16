@@ -272,7 +272,11 @@ def load_vars_hierarchy(yaml_path):
         if not os.path.exists(path):
             continue
         with open(path, "r") as f:
-            data = yaml.safe_load(f) or {}
+            try:
+                data = yaml.safe_load(f) or {}
+            except yaml.scanner.ScannerError as e:
+                print(e, "Exiting due to YAML ScannerError!", sep="\n\n")
+                exit()
             merged_data = deep_merge_custom(merged_data, data)
 
     return merged_data
