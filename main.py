@@ -146,15 +146,21 @@ def recursive_merge_dicts(base: dict, override: dict) -> dict:
     if delete_keys:
         delete_keys_with_dot_notation(result, delete_keys)
 
-    # Handle keys with '__remove' suffix
+    # Handle keys with '__remove' and '__append' suffixes
     handle_remove_keys(result, override)
+    handle_append_keys(result, override)
 
     # Remove keys with value False
     remove_false_values(result, override)
 
     # Merge other keys recursively or replace
     for key, val in override.items():
-        if key == "__delete_keys__" or key.endswith("__remove") or val is False:
+        if (
+            key == "__delete_keys__"
+            or key.endswith("__remove")
+            or key.endswith("__append")
+            or val is False
+        ):
             # These have already been processed above
             continue
 
@@ -216,6 +222,42 @@ def handle_remove_keys(target: dict, override: dict):
             target.pop(base_key, None)
         elif isinstance(val, list) and isinstance(target.get(base_key), list):
             target[base_key] = [item for item in target[base_key] if item not in val]
+
+
+def handle_append_keys(target: dict, override: dict):
+    """
+    Process keys ending with '__append' in the override dictionary
+
+    - If base key is a list, append the new items
+    - If base key is missing, create it as a new list
+    - If base key exists but is not a list, show text and exit
+
+    Args:
+        target (dict): The base dictionary to modify
+        override (dict): The override dictionary containing append instructions
+    """
+    for key in list(override.keys()):
+        if not key.endswith("__append"):
+            continue
+
+        base_key = key.removesuffix("__append")
+        val = override[key]
+
+        if not isinstance(val, list):
+            text = f"Error occured while parsing {key!r} with value {val!r}\n"
+            text += f"Only lists can be appended, not {type(val).__name__}"
+            log.critical(text)
+            exit()
+
+        if base_key not in target:
+            target[base_key] = val.copy()
+        elif isinstance(target[base_key], list):
+            target[base_key].extend(val)
+        else:
+            text = f"Error occured while parsing {key!r} with value {val!r}\n"
+            text += f"Can append to lists only, not {type(target[base_key]).__name__}"
+            log.critical(text)
+            exit()
 
 
 def remove_false_values(target: dict, override: dict):
