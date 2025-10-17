@@ -99,38 +99,22 @@ def generate_config(yaml_path: str):
     log.info(f"Created: {output_path}")
 
 
-def deep_merge_custom(base: dict, override: dict) -> dict:
+def merge_dicts_deep(base: dict, override: dict) -> dict:
     """
-    Entry point function to deeply merge two dictionaries with advanced control:
+    Recursively merges two dictionaries with support for advanced override logic
 
-    Supports:
-    - Recursive merging of nested dicts
-    - Full key removal via 'key: False' or 'key__remove: True'
-    - Partial removal from lists via 'key__remove: [items]'
-    - Nested key removal via '__delete_keys__' with dot notation
+    The `override` dictionary can:
+    - Add or replace values at any depth
+    - Remove entire keys using `key: false` or `key__remove: true`
+    - Remove specific list items using `key__remove: [items]`
+    - Append items to lists using `key__append: [items]`
+    - Delete nested keys using `__delete_keys__` and dot notation
+
+    This function returns a new merged dictionary without modifying the original
 
     Args:
-        base (dict): Base dictionary
-        override (dict): Override dictionary
-
-    Returns:
-        dict: Merged dictionary
-    """
-    return recursive_merge_dicts(base, override)
-
-
-def recursive_merge_dicts(base: dict, override: dict) -> dict:
-    """
-    Recursively merge `override` dictionary into `base` dictionary with support
-    for:
-
-    - Removing keys via 'key: False' or 'key__remove: True'
-    - Removing specific list items via 'key__remove: [items]'
-    - Deleting nested keys via '__delete_keys__' list of dot-separated keys
-
-    Args:
-        base (dict): The base dictionary
-        override (dict): The overriding dictionary
+        base (dict): The base dictionary to be merged into
+        override (dict): The dictionary with overrides or modifications
 
     Returns:
         dict: A new dictionary representing the merged result
@@ -168,7 +152,7 @@ def recursive_merge_dicts(base: dict, override: dict) -> dict:
 
         if isinstance(base_val, dict) and isinstance(val, dict):
             # Recursive merge for nested dicts
-            result[key] = recursive_merge_dicts(base_val, val)
+            result[key] = merge_dicts_deep(base_val, val)
         elif isinstance(base_val, list) and isinstance(val, list):
             # Replace lists entirely
             result[key] = copy.deepcopy(val)
@@ -337,7 +321,7 @@ def load_vars_hierarchy(yaml_path: str) -> dict | None:
             log.debug(path, b=2, a=3)
             log.debug("old data", yaml.dump(merged_data), a=3)
             log.debug("new data", yaml.dump(data), a=3)
-            merged_data = deep_merge_custom(merged_data, data)
+            merged_data = merge_dicts_deep(merged_data, data)
             log.debug("merged data", yaml.dump(merged_data), path)
     log.info(a=3)
     log.info(f"Processed: {device_yaml_full_path}")
