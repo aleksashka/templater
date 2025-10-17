@@ -27,7 +27,8 @@ class Config:
     device_yamls_path = "merged_yamls"
 
     # https://docs.python.org/3/library/logging.html#logging.basicConfig
-    log_level = logging.WARNING
+    log_level = logging.WARNING  # Default
+    # log_level = logging.INFO
     # log_level = logging.DEBUG
     log_style = "{"
     log_format = "[{asctime}] {levelname:<8} {message}"
