@@ -84,19 +84,66 @@ def generate_config(yaml_path: str):
         log.error(f"Error while loading template '{template_path}': {error}")
         return
 
-    # Render the final configuration using merged variables
+    # Render the final configuration
     rendered_config = template.render(merged_vars)
 
-    # Create the output path: same relative structure, but with .txt extension
+    # Save configuration and optionally yaml
+    config_path = save_output_files(relative_path, rendered_config, merged_vars)
+    log.info(f"Created: {config_path}")
+
+
+def save_output_files(
+    relative_path: str,
+    rendered_config: str,
+    merged_vars: dict,
+) -> str:
+    """
+    Save the rendered device configuration and optionally the merged YAML
+    variables
+
+    Behavior:
+    - The rendered configuration is always saved in the output directory,
+        preserving the relative structure but with a .txt extension
+    - If Config.save_device_yamls is True, the merged YAML variables are saved
+        as well:
+        * If Config.device_yamls_path is set (a string), YAML files are saved
+            under that directory, preserving relative paths
+        * If Config.device_yamls_path is None, YAML files are saved in a "yamls"
+            subdirectory inside the output directory, preserving relative paths
+
+    Args:
+        relative_path (str): Relative path to the device YAML file (from root
+            device YAMLs directory)
+        merged_vars (dict): Fully merged variables dictionary to save as YAML
+        rendered_config (str): Rendered device configuration string to save as
+            .txt file
+
+    Returns:
+        str: The full path to the saved rendered configuration (.txt) file
+    """
+    # Prepare path and save rendered configuration (.txt)
     txt_name = os.path.splitext(relative_path)[0] + ".txt"
-    output_path = os.path.join(Config.output_dir, txt_name)
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    config_path = os.path.join(Config.output_dir, txt_name)
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
 
-    # Save the rendered configuration
-    with open(output_path, "w") as file:
-        file.write(rendered_config)
+    # Save the rendered configuration file
+    with open(config_path, "w") as txt_file:
+        txt_file.write(rendered_config)
 
-    log.info(f"Created: {output_path}")
+    # Save merged YAML variables if enabled
+    if Config.save_device_yamls:
+        # Determine YAML output path according to device_yamls_path config
+        yaml_name = os.path.splitext(relative_path)[0] + ".yaml"
+        if Config.device_yamls_path:
+            merged_yaml_path = os.path.join(Config.device_yamls_path, yaml_name)
+        else:
+            merged_yaml_path = os.path.join(Config.output_dir, "yamls", yaml_name)
+
+        os.makedirs(os.path.dirname(merged_yaml_path), exist_ok=True)
+        with open(merged_yaml_path, "w") as yaml_file:
+            yaml.dump(merged_vars, yaml_file)
+
+    return config_path
 
 
 def merge_dicts_deep(base: dict, override: dict) -> dict:

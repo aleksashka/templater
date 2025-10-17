@@ -7,6 +7,25 @@ class Config:
     templates_dir = "templates"
     vars_filename = "vars.yaml"
 
+    save_device_yamls = False
+
+    # Optional root directory for saving final merged YAML files. If set to a
+    # string (e.g., "merged_yamls"), all YAML outputs will be saved under this
+    # directory, preserving the same relative structure as the input YAMLs. If
+    # set to None, YAML files will be saved in a "yamls" subdirectory inside the
+    # output directory where rendered .txt configs are saved (e.g.,
+    # device_configs/yamls/cisco_ios/router/my-device.yaml).
+    #
+    # Example when device_yamls_path is set to "merged_yamls":
+    #   device_yamls/cisco_ios/router/my-device.yaml ->
+    #   merged_yamls/cisco_ios/router/my-device.yaml
+    #
+    # Example when device_yamls_path is None:
+    #   device_yamls/cisco_ios/router/my-device.yaml ->
+    #   device_configs/yamls/cisco_ios/router/my-device.yaml
+    # device_yamls_path = None
+    device_yamls_path = "merged_yamls"
+
     # https://docs.python.org/3/library/logging.html#logging.basicConfig
     log_level = logging.WARNING
     # log_level = logging.DEBUG
