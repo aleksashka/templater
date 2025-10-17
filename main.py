@@ -43,7 +43,11 @@ def find_yaml_files(root_dir: str) -> Generator[str, None, None]:
         str: Full path to each YAML file (excluding `Config.vars_filename`)
     """
     for dirpath, _, filenames in os.walk(root_dir):
+        if os.path.basename(dirpath).startswith(Config.skip_prefix):
+            continue
         for file in filenames:
+            if file.startswith(Config.skip_prefix):
+                continue
             if file.endswith(".yaml"):
                 if file != Config.vars_filename:
                     yield os.path.join(dirpath, file)

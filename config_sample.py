@@ -6,6 +6,7 @@ class Config:
     output_dir = "device_configs"
     templates_dir = "templates"
     vars_filename = "vars.yaml"
+    skip_prefix = "_"
 
     save_device_yamls = False
 
