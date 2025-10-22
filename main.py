@@ -59,9 +59,13 @@ def find_yaml_files(root_dir: str) -> Generator[str, None, None]:
             if path_should_be_skipped(file):
                 # Ignore files with configured `skip_prefix`
                 continue
-            if file.endswith(".yaml"):
-                if file != Config.vars_filename:
-                    yield os.path.join(dirpath, file)
+            if not file.endswith(".yaml"):
+                # Ignore non-yaml files
+                continue
+            if file == Config.vars_filename:
+                # Ignore `vars_filename` files
+                continue
+            yield os.path.join(dirpath, file)
 
 
 def generate_config(yaml_path: str):
