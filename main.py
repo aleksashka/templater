@@ -30,6 +30,15 @@ def main():
         generate_config(yaml_path)
 
 
+def path_should_be_skipped(path: str) -> bool:
+    """
+    Checks if the given path should be skipped based on the configured prefix.
+    """
+    if Config.skip_prefix is None:
+        return False
+    return path.startswith(Config.skip_prefix)
+
+
 def find_yaml_files(root_dir: str) -> Generator[str, None, None]:
     """
     Recursively walks through the directory tree starting from `root_dir`,
@@ -43,10 +52,12 @@ def find_yaml_files(root_dir: str) -> Generator[str, None, None]:
         str: Full path to each YAML file (excluding `Config.vars_filename`)
     """
     for dirpath, _, filenames in os.walk(root_dir):
-        if os.path.basename(dirpath).startswith(Config.skip_prefix):
+        if path_should_be_skipped(os.path.basename(dirpath)):
+            # Ignore dirs with configured `skip_prefix`
             continue
         for file in filenames:
-            if file.startswith(Config.skip_prefix):
+            if path_should_be_skipped(file):
+                # Ignore files with configured `skip_prefix`
                 continue
             if file.endswith(".yaml"):
                 if file != Config.vars_filename:

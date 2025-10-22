@@ -6,7 +6,9 @@ class Config:
     input_templates_dir = "_input_templates"
     output_data_dir = "_output_data"
     vars_filename = "vars.yaml"
-    skip_prefix = "_"
+
+    # Set to a string (e.g. "_") to skip YAMLs/dirs with this prefix
+    skip_prefix = None
 
     save_merged_yamls = False
 
