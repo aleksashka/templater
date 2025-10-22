@@ -11,8 +11,8 @@ class Config:
     save_merged_yamls = False
 
     # Optional root directory for saving output (merged) YAML files.  If set to
-    # None, YAML files will be saved in a "yamls" subdirectory inside the output
-    # directory where rendered .txt configs are saved (e.g.,
+    # None, YAML files will be saved in a "yamls" subdirectory inside the
+    # `output_data_dir` directory where rendered .txt configs are saved (e.g.,
     # _output_data/yamls/cisco_ios/router/my-device.yaml)
     #
     # If set to a string (e.g., "merged_yamls"), all YAML outputs will be saved
@@ -27,8 +27,8 @@ class Config:
     #   _input_data/cisco_ios/router/my-device.yaml ->
     #   merged_yamls/cisco_ios/router/my-device.yaml
     #
-    # merged_yamls_path = "merged_yamls"  # Save in merged_yamls/
-    merged_yamls_path = None  # Save in `input_data_dir`/yamls
+    # merged_yamls_path = "merged_yamls"  # Save YAMLs in "merged_yamls/"
+    merged_yamls_path = None  # Save YAMLs in "`input_data_dir`/yamls"
 
     # https://docs.python.org/3/library/logging.html#logging.basicConfig
     log_level = logging.WARNING  # Default
