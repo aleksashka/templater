@@ -2,7 +2,7 @@
 __pycache__/
 
 config.py
-templates/
-device_yamls/
+_input_data/
+_input_templates/
+_output_data/
 merged_yamls/
-device_configs/

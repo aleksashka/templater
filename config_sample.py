@@ -2,30 +2,33 @@ import logging
 
 
 class Config:
-    device_yamls_dir = "device_yamls"
-    output_dir = "device_configs"
-    templates_dir = "templates"
+    input_data_dir = "_input_data"
+    input_templates_dir = "_input_templates"
+    output_data_dir = "_output_data"
     vars_filename = "vars.yaml"
     skip_prefix = "_"
 
-    save_device_yamls = False
+    save_merged_yamls = False
 
-    # Optional root directory for saving final merged YAML files. If set to a
-    # string (e.g., "merged_yamls"), all YAML outputs will be saved under this
-    # directory, preserving the same relative structure as the input YAMLs. If
-    # set to None, YAML files will be saved in a "yamls" subdirectory inside the
-    # output directory where rendered .txt configs are saved (e.g.,
-    # device_configs/yamls/cisco_ios/router/my-device.yaml).
+    # Optional root directory for saving output (merged) YAML files.  If set to
+    # None, YAML files will be saved in a "yamls" subdirectory inside the output
+    # directory where rendered .txt configs are saved (e.g.,
+    # _output_data/yamls/cisco_ios/router/my-device.yaml)
     #
-    # Example when device_yamls_path is set to "merged_yamls":
-    #   device_yamls/cisco_ios/router/my-device.yaml ->
+    # If set to a string (e.g., "merged_yamls"), all YAML outputs will be saved
+    # under this directory, preserving the same relative structure as the input
+    # YAMLs
+    #
+    # Example when `merged_yamls_path` is None:
+    #   _input_data/cisco_ios/router/my-device.yaml ->
+    #   _output_data/yamls/cisco_ios/router/my-device.yaml
+    #
+    # Example when `merged_yamls_path` is "merged_yamls":
+    #   _input_data/cisco_ios/router/my-device.yaml ->
     #   merged_yamls/cisco_ios/router/my-device.yaml
     #
-    # Example when device_yamls_path is None:
-    #   device_yamls/cisco_ios/router/my-device.yaml ->
-    #   device_configs/yamls/cisco_ios/router/my-device.yaml
-    # device_yamls_path = None
-    device_yamls_path = "merged_yamls"
+    # merged_yamls_path = "merged_yamls"  # Save in merged_yamls/
+    merged_yamls_path = None  # Save in `input_data_dir`/yamls
 
     # https://docs.python.org/3/library/logging.html#logging.basicConfig
     log_level = logging.WARNING  # Default

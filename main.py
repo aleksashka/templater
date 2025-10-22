@@ -20,24 +20,24 @@ logging.basicConfig(
 
 log = Log()
 env = Environment(
-    loader=FileSystemLoader(Config.templates_dir),
+    loader=FileSystemLoader(Config.input_templates_dir),
     autoescape=select_autoescape(disabled_extensions=("j2", "txt", "yaml")),
 )
 
 
 def main():
-    for yaml_path in find_yaml_files(Config.device_yamls_dir):
+    for yaml_path in find_yaml_files(Config.input_data_dir):
         generate_config(yaml_path)
 
 
 def find_yaml_files(root_dir: str) -> Generator[str, None, None]:
     """
     Recursively walks through the directory tree starting from `root_dir`,
-    yielding paths to all `.yaml` files except those named as configured in
-    `Config.vars_filename` (`vars.yaml` by default)
+    yielding paths to all `.yaml` files except those named as
+    Config.`vars_filename`
 
     Args:
-        root_dir (str): Root directory to search for YAML files
+        root_dir (str): Root (starting) directory to search for YAML files
 
     Yields:
         str: Full path to each YAML file (excluding `Config.vars_filename`)
@@ -59,25 +59,27 @@ def generate_config(yaml_path: str):
     definition
 
     This function:
-    - Loads the device-specific YAML data
-    - Merges it with inherited variables from all applicable `vars.yaml` files
-    - Selects the appropriate base Jinja2 template based on device type
+    - Loads the device-specific YAML data, noting `device_type` (directory name
+        inside Config.`input_data_dir`)
+    - Merges it with inherited variables from all applicable
+        Config.`vars_filename` files
+    - Selects the appropriate base Jinja2 template based on the `device_type`
     - Renders the configuration
-    - Writes the output to a `.txt` file in the corresponding structure
+    - Writes the output (configuration and optinally merged YAML)
 
     Args:
         yaml_path (str): Full path to the device YAML file
     """
 
-    # Compute path relative to the root of the device YAMLs directory
-    relative_path = os.path.relpath(yaml_path, Config.device_yamls_dir)
+    # Compute path relative to the `input_data_dir`
+    relative_path = os.path.relpath(yaml_path, Config.input_data_dir)
 
-    # Merge inherited and device-specific variables
+    # Merge all inherited and device-specific variables
     merged_vars = load_vars_hierarchy(relative_path)
     if merged_vars is None:
         return
 
-    # Add device_type key
+    # Add "device_type" key
     merged_vars["device_type"] = get_device_type(relative_path)
 
     # Select template based on top-level device type (e.g. "cisco_ios")
@@ -91,7 +93,7 @@ def generate_config(yaml_path: str):
     # Render the final configuration
     rendered_config = template.render(merged_vars)
 
-    # Save configuration and optionally yaml
+    # Save configuration (and optionally merged YAML)
     config_path = save_output_files(relative_path, rendered_config, merged_vars)
     log.info(f"Created: {config_path}")
 
@@ -106,18 +108,19 @@ def save_output_files(
     variables
 
     Behavior:
-    - The rendered configuration is always saved in the output directory,
-        preserving the relative structure but with a .txt extension
-    - If Config.save_device_yamls is True, the merged YAML variables are saved
+    - The rendered configuration is always saved in the `output_data_dir`,
+        preserving the relative structure, but with a ".txt" extension
+    - If Config.`save_merged_yamls` is True, the merged YAML variables are saved
         as well:
-        * If Config.device_yamls_path is set (a string), YAML files are saved
+        * If Config.`merged_yamls_path` is None, then YAML files are saved in a
+            "yamls" subdirectory inside the `output_data_dir`, preserving
+            relative paths
+        * If Config.`merged_yamls_path` is a string, then YAML files are saved
             under that directory, preserving relative paths
-        * If Config.device_yamls_path is None, YAML files are saved in a "yamls"
-            subdirectory inside the output directory, preserving relative paths
 
     Args:
-        relative_path (str): Relative path to the device YAML file (from root
-            device YAMLs directory)
+        relative_path (str): Relative path to the device YAML file (relative to
+            the Config.`input_data_dir`)
         merged_vars (dict): Fully merged variables dictionary to save as YAML
         rendered_config (str): Rendered device configuration string to save as
             .txt file
@@ -127,7 +130,7 @@ def save_output_files(
     """
     # Prepare path and save rendered configuration (.txt)
     txt_name = os.path.splitext(relative_path)[0] + ".txt"
-    config_path = os.path.join(Config.output_dir, txt_name)
+    config_path = os.path.join(Config.output_data_dir, txt_name)
     os.makedirs(os.path.dirname(config_path), exist_ok=True)
 
     # Save the rendered configuration file
@@ -135,13 +138,13 @@ def save_output_files(
         txt_file.write(rendered_config)
 
     # Save merged YAML variables if enabled
-    if Config.save_device_yamls:
-        # Determine YAML output path according to device_yamls_path config
+    if Config.save_merged_yamls:
+        # Determine YAML output path according to Config.`merged_yamls_path`
         yaml_name = os.path.splitext(relative_path)[0] + ".yaml"
-        if Config.device_yamls_path:
-            merged_yaml_path = os.path.join(Config.device_yamls_path, yaml_name)
+        if Config.merged_yamls_path:
+            merged_yaml_path = os.path.join(Config.merged_yamls_path, yaml_name)
         else:
-            merged_yaml_path = os.path.join(Config.output_dir, "yamls", yaml_name)
+            merged_yaml_path = os.path.join(Config.output_data_dir, "yamls", yaml_name)
 
         os.makedirs(os.path.dirname(merged_yaml_path), exist_ok=True)
         with open(merged_yaml_path, "w") as yaml_file:
@@ -314,8 +317,8 @@ def get_device_type(yaml_path: str) -> str:
     which represents the base device type (e.g., 'cisco_ios', 'juniper')
 
     Args:
-        yaml_path (str): Relative path to the device YAML file (from the root of
-            device_yamls)
+        yaml_path (str): Relative path to the YAML file of the device (relative
+            from the root of Config.`input_data_dir`)
 
     Returns:
         str: Top-level directory name representing the device type
@@ -326,35 +329,36 @@ def get_device_type(yaml_path: str) -> str:
 
 def load_vars_hierarchy(yaml_path: str) -> dict | None:
     """
-    Loads and deeply merges all `vars.yaml` files found along the directory
-    hierarchy leading to a specific device YAML file, including the device file
-    itself at the end
+    Loads and deeply merges all Config.`vars_filename` files found along the
+    directory hierarchy leading to a specific device YAML file, including the
+    device file itself at the end
 
     Supports advanced override features via `deep_merge_custom`
 
     Example hierarchy:
-    - device_yamls/vars.yaml (global)
-    - device_yamls/cisco_ios/vars.yaml (vendor-specific)
-    - device_yamls/cisco_ios/router/vars.yaml (role-specific)
-    - device_yamls/cisco_ios/router/new_york.yaml (device-specific)
+    - `input_data_dir`/vars.yaml (global)
+    - `input_data_dir`/cisco_ios/vars.yaml (vendor-specific)
+    - `input_data_dir`/cisco_ios/router/vars.yaml (role-specific)
+    - `input_data_dir`/cisco_ios/router/new_york.yaml (device-specific)
 
     Args:
-        yaml_path (str): Relative path (from device_yamls) to the device YAML
+        yaml_path (str): Relative path (starting from Config.`input_data_dir`)
+            to the device YAML
 
     Returns:
         dict: Fully merged variable dictionary
     """
-    # Build list of all YAML files to merge
+    # Build a list of all YAML files to merge
     yaml_files = []
     path_parts = os.path.dirname(yaml_path).replace("\\", "/").split("/")
     for i in range(len(path_parts) + 1):
-        # Build path to vars.yaml at this level
+        # Build path to Config.`vars_filename` at this level
         partial_path = os.path.join(*path_parts[:i], Config.vars_filename)
-        full_path = os.path.join(Config.device_yamls_dir, partial_path)
+        full_path = os.path.join(Config.input_data_dir, partial_path)
         yaml_files.append(full_path)
 
     # Add the device YAML file itself at the end
-    device_yaml_full_path = os.path.join(Config.device_yamls_dir, yaml_path)
+    device_yaml_full_path = os.path.join(Config.input_data_dir, yaml_path)
     yaml_files.append(device_yaml_full_path)
 
     # Merge all YAML files in order
