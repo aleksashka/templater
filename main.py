@@ -26,38 +26,39 @@ env = Environment(
 
 
 def main():
-    for yaml_path in find_yaml_files(Config.input_data_dir):
-        generate_config(yaml_path)
+    for yaml_path in find_target_yaml_files(Config.input_data_dir):
+        generate_and_save(yaml_path)
 
 
 def path_should_be_skipped(path: str) -> bool:
     """
-    Checks if the given path should be skipped based on the configured prefix.
+    Checks if the given path should be skipped based on the configured prefix
     """
     if Config.skip_prefix is None:
         return False
     return path.startswith(Config.skip_prefix)
 
 
-def find_yaml_files(root_dir: str) -> Generator[str, None, None]:
+def find_target_yaml_files(root_dir: str) -> Generator[str, None, None]:
     """
-    Recursively walks through the directory tree starting from `root_dir`,
-    yielding paths to all `.yaml` files except those named as
-    Config.`vars_filename`
+    Recursively walks through the directory tree starting from the provided
+    `root_dir`, yielding paths to all `.yaml` (target) files except those named
+    as Config.`vars_filename`
 
     Args:
         root_dir (str): Root (starting) directory to search for YAML files
 
     Yields:
-        str: Full path to each YAML file (excluding `Config.vars_filename`)
+        str: Full path to each YAML file (excluding `Config.vars_filename`
+            files)
     """
     for dirpath, _, filenames in os.walk(root_dir):
         if path_should_be_skipped(os.path.basename(dirpath)):
-            # Ignore dirs with configured `skip_prefix`
+            # Ignore dirs starting with the configured `skip_prefix`
             continue
         for file in filenames:
             if path_should_be_skipped(file):
-                # Ignore files with configured `skip_prefix`
+                # Ignore files starting with the configured `skip_prefix`
                 continue
             if not file.endswith(".yaml"):
                 # Ignore non-yaml files
@@ -68,89 +69,89 @@ def find_yaml_files(root_dir: str) -> Generator[str, None, None]:
             yield os.path.join(dirpath, file)
 
 
-def generate_config(yaml_path: str):
+def generate_and_save(yaml_path: str):
     """
-    Generates a configuration file for a network device based on a YAML
-    definition
+    Generate and save a text file based on the provided path the target YAML
 
     This function:
-    - Loads the device-specific YAML data, noting `device_type` (directory name
-        inside Config.`input_data_dir`)
+    - Loads the target YAML data, noting `target_type` (directory name
+        immediately inside Config.`input_data_dir`)
     - Merges it with inherited variables from all applicable
         Config.`vars_filename` files
-    - Selects the appropriate base Jinja2 template based on the `device_type`
-    - Renders the configuration
-    - Writes the output (configuration and optinally merged YAML)
+    - Selects the appropriate template ("base.j2") inside the `target_type`
+        directory
+    - Renders the output text
+    - Saves the outputs (text file and optinally final merged YAML)
 
     Args:
-        yaml_path (str): Full path to the device YAML file
+        yaml_path (str): Full path to the target YAML file
     """
 
     # Compute path relative to the `input_data_dir`
     relative_path = os.path.relpath(yaml_path, Config.input_data_dir)
 
-    # Merge all inherited and device-specific variables
+    # Merge all inherited and target-specific variables
     merged_vars = load_vars_hierarchy(relative_path)
     if merged_vars is None:
         return
 
-    # Add "device_type" key
-    merged_vars["device_type"] = get_device_type(relative_path)
+    # Add "target_type" key
+    merged_vars["target_type"] = get_target_type(relative_path)
 
-    # Select template based on top-level device type (e.g. "cisco_ios")
-    template_path = f"{merged_vars['device_type']}/base.j2"
+    # Select template based on the top-level target type (e.g. "cisco_ios")
+    template_path = f"{merged_vars['target_type']}/base.j2"
     try:
         template = env.get_template(template_path)
     except Exception as error:
         log.error(f"Error while loading template '{template_path}': {error}")
         return
 
-    # Render the final configuration
-    rendered_config = template.render(merged_vars)
+    # Render the final text file
+    rendered_text = template.render(merged_vars)
 
-    # Save configuration (and optionally merged YAML)
-    config_path = save_output_files(relative_path, rendered_config, merged_vars)
+    # Save rendered text file (and optionally merged YAML)
+    config_path = save_output_files(relative_path, rendered_text, merged_vars)
     log.info(f"Created: {config_path}")
 
 
 def save_output_files(
     relative_path: str,
-    rendered_config: str,
+    rendered_text: str,
     merged_vars: dict,
 ) -> str:
     """
-    Save the rendered device configuration and optionally the merged YAML
-    variables
+    Save the rendered text file and optionally the merged YAML
 
     Behavior:
-    - The rendered configuration is always saved in the `output_data_dir`,
-        preserving the relative structure, but with a ".txt" extension
+    - The rendered text file is always saved (with a configured extension) in
+        the `output_data_dir`, preserving the relative structure
     - If Config.`save_merged_yamls` is True, the merged YAML variables are saved
         as well:
         * If Config.`merged_yamls_path` is None, then YAML files are saved in a
             "yamls" subdirectory inside the `output_data_dir`, preserving
             relative paths
         * If Config.`merged_yamls_path` is a string, then YAML files are saved
-            under that directory, preserving relative paths
+            under that directory (next to the `output_data_dir`), preserving
+            relative paths
 
     Args:
-        relative_path (str): Relative path to the device YAML file (relative to
+        relative_path (str): Relative path to the target YAML file (relative to
             the Config.`input_data_dir`)
         merged_vars (dict): Fully merged variables dictionary to save as YAML
-        rendered_config (str): Rendered device configuration string to save as
-            .txt file
+        rendered_text (str): Rendered text to be saved as a file with
+            Config.`output_ext` extension
 
     Returns:
-        str: The full path to the saved rendered configuration (.txt) file
+        str: The full path to the saved rendered file
     """
-    # Prepare path and save rendered configuration (.txt)
-    txt_name = os.path.splitext(relative_path)[0] + ".txt"
-    config_path = os.path.join(Config.output_data_dir, txt_name)
-    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+    # Prepare the target filename
+    target_filename = os.path.splitext(relative_path)[0] + Config.output_ext
+    target_path = os.path.join(Config.output_data_dir, target_filename)
+    os.makedirs(os.path.dirname(target_path), exist_ok=True)
 
-    # Save the rendered configuration file
-    with open(config_path, "w") as txt_file:
-        txt_file.write(rendered_config)
+    # Save the rendered file
+    with open(target_path, "w") as file:
+        file.write(rendered_text)
 
     # Save merged YAML variables if enabled
     if Config.save_merged_yamls:
@@ -165,7 +166,7 @@ def save_output_files(
         with open(merged_yaml_path, "w") as yaml_file:
             yaml.dump(merged_vars, yaml_file)
 
-    return config_path
+    return target_path
 
 
 def merge_dicts_deep(base: dict, override: dict) -> dict:
@@ -326,27 +327,27 @@ def remove_false_values(target: dict, override: dict):
             target.pop(key, None)
 
 
-def get_device_type(yaml_path: str) -> str:
+def get_target_type(yaml_path: str) -> str:
     """
-    Extracts the top-level directory name from a relative YAML path,
-    which represents the base device type (e.g., 'cisco_ios', 'juniper')
+    Extracts the top-level directory name from a relative YAML path to represent
+    the target type (e.g., 'cisco_ios', 'juniper', 'whatever')
 
     Args:
-        yaml_path (str): Relative path to the YAML file of the device (relative
-            from the root of Config.`input_data_dir`)
+        yaml_path (str): Relative path to the target YAML file (relative from
+            the root of Config.`input_data_dir`)
 
     Returns:
-        str: Top-level directory name representing the device type
+        str: Top-level directory name representing the taget type
     """
-    device_type = yaml_path.replace("\\", "/").split("/")[0]
-    return device_type
+    target_type = yaml_path.replace("\\", "/").split("/")[0]
+    return target_type
 
 
 def load_vars_hierarchy(yaml_path: str) -> dict | None:
     """
     Loads and deeply merges all Config.`vars_filename` files found along the
-    directory hierarchy leading to a specific device YAML file, including the
-    device file itself at the end
+    directory hierarchy leading to a target YAML file, including the target file
+    itself at the end
 
     Supports advanced override features via `deep_merge_custom`
 
@@ -354,11 +355,11 @@ def load_vars_hierarchy(yaml_path: str) -> dict | None:
     - `input_data_dir`/vars.yaml (global)
     - `input_data_dir`/cisco_ios/vars.yaml (vendor-specific)
     - `input_data_dir`/cisco_ios/router/vars.yaml (role-specific)
-    - `input_data_dir`/cisco_ios/router/new_york.yaml (device-specific)
+    - `input_data_dir`/cisco_ios/router/new_york.yaml (target-specific)
 
     Args:
         yaml_path (str): Relative path (starting from Config.`input_data_dir`)
-            to the device YAML
+            to the target YAML
 
     Returns:
         dict: Fully merged variable dictionary
@@ -372,12 +373,12 @@ def load_vars_hierarchy(yaml_path: str) -> dict | None:
         full_path = os.path.join(Config.input_data_dir, partial_path)
         yaml_files.append(full_path)
 
-    # Add the device YAML file itself at the end
-    device_yaml_full_path = os.path.join(Config.input_data_dir, yaml_path)
-    yaml_files.append(device_yaml_full_path)
+    # Add the target YAML file itself at the end
+    target_yaml_full_path = os.path.join(Config.input_data_dir, yaml_path)
+    yaml_files.append(target_yaml_full_path)
 
     # Merge all YAML files in order
-    log.debug(device_yaml_full_path, b=1)
+    log.debug(target_yaml_full_path, b=1)
     merged_data = {}
     for path in yaml_files:
         if not os.path.exists(path):
@@ -394,7 +395,7 @@ def load_vars_hierarchy(yaml_path: str) -> dict | None:
             merged_data = merge_dicts_deep(merged_data, data)
             log.debug("merged data", yaml.dump(merged_data), path)
     log.info(a=3)
-    log.info(f"Processed: {device_yaml_full_path}")
+    log.info(f"Processed: {target_yaml_full_path}")
 
     return merged_data
 

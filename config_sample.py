@@ -6,15 +6,17 @@ class Config:
     input_templates_dir = "_input_templates"
     output_data_dir = "_output_data"
     vars_filename = "vars.yaml"
+    output_ext = ".txt"
 
-    # Set to a string (e.g. "_") to skip YAMLs/dirs with this prefix
+    # Set to a string (e.g. "_") to skip YAMLs/dirs with this prefix. Does not
+    # apply to the top-level directories (configured above)
     skip_prefix = None
 
     save_merged_yamls = False
 
     # Optional root directory for saving output (merged) YAML files.  If set to
     # None, YAML files will be saved in a "yamls" subdirectory inside the
-    # `output_data_dir` directory where rendered .txt configs are saved (e.g.,
+    # `output_data_dir` directory where rendered output files are saved (e.g.,
     # _output_data/yamls/cisco_ios/router/my-device.yaml)
     #
     # If set to a string (e.g., "merged_yamls"), all YAML outputs will be saved
