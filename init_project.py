@@ -5,7 +5,11 @@ from pathlib import Path
 
 
 def main():
-    make_sure_required_files_are_present()
+    required_files = {
+        "config.py": "config_sample.py",
+    }
+    make_sure_required_files_are_present(required_files)
+
     from config import Config
 
     required_dirs = [
@@ -18,16 +22,11 @@ def main():
             else Config.merged_yamls_path
         ),
     ]
-
     create_working_directories(required_dirs, timeout=10)
 
 
-def make_sure_required_files_are_present():
+def make_sure_required_files_are_present(required_files: dict[str, str]):
     ok_to_continue = True
-
-    required_files = {
-        "config.py": "config_sample.py",
-    }
 
     for target, source in required_files.items():
         target_path = Path(target)
