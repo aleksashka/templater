@@ -8,6 +8,11 @@ class Config:
     vars_filename = "vars.yaml"
     output_ext = ".txt"
 
+    # Name of variable to derive from target YAML filename (if unset)
+    filename_variable = None  # Do not use this feature
+    # filename_variable = "hostname"  # `GW01.yaml` will result in {"hostname": "GW01"}
+    # filename_variable = "person.name"  # `Alex.yaml` -> {"person": {"name": "Alex"}}
+
     # Set to a string (e.g. "_") to skip YAMLs/dirs with this prefix. Does not
     # apply to the top-level directories (configured above)
     skip_prefix = None

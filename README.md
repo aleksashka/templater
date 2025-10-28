@@ -17,6 +17,7 @@ This is a flexible Jinja2-based text generator (was initially created for networ
   - rendered `.txt` (configurable) text files
   - final merged `.yaml` variable files (optional)
 - Optionally exclude dirs and files from processing via `skip_prefix` (configurable)
+- Optionally set configurable variable from target YAML filename (`Config.filename_variable`)
 
 ## Directory Structure Example
 
@@ -74,6 +75,3 @@ To create `some_text.txt` based on `some_name` template (e.g. `cisco`, `juniper`
 ## Configuration
 
 Edit the `Config` class in `config.py`
-
-## TODO
-- [ ] Optionally get `hostname` (make key configurable, possibly multi-level) from filename if there is no this key in the final merged yaml

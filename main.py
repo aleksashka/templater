@@ -1,6 +1,7 @@
 import os
 import copy
 import logging
+from pathlib import Path
 from typing import Generator
 
 import yaml
@@ -97,6 +98,10 @@ def generate_and_save(yaml_path: str):
 
     # Add "target_type" key
     merged_vars["target_type"] = get_target_type(relative_path)
+
+    # Set configured variable (if any) from filename
+    if Config.filename_variable is not None:
+        set_var_from_filename(merged_vars, relative_path, Config.filename_variable)
 
     # Select template based on the top-level target type (e.g. "cisco_ios")
     template_path = f"{merged_vars['target_type']}/base.j2"
@@ -398,6 +403,45 @@ def load_vars_hierarchy(yaml_path: str) -> dict | None:
     log.info(f"Processed: {target_yaml_full_path}")
 
     return merged_data
+
+
+def set_var_from_filename(data: dict, yaml_path: str, variable: str):
+    """
+    Set a variable (if it does not already exist) in a YAML dictionary from the
+    filename
+
+    Nested keys are created automatically if they do not exist
+
+    Args:
+        data (dict): Loaded YAML data
+        yaml_path (str): Path to the YAML file
+        variable (str): Dot-separated variable name to set (e.g., "hostname" or
+            "person.name")
+    """
+
+    def set_if_missing(data: dict, path: list[str], value: str):
+        """
+        Recursively set a value if missing in a nested dictionary
+
+        Args:
+            dct (dict): The dictionary to update
+            path (list[str]): List of nested keys representing the path to the
+                target
+            value (str): The value to set if the key is missing
+        """
+        key = path[0]
+        if len(path) == 1:
+            data.setdefault(key, value)
+        else:
+            subdict = data.setdefault(key, {})
+            if not isinstance(subdict, dict):
+                # If a non-dict value exists, don't overwrite it
+                return
+            set_if_missing(subdict, path[1:], value)
+
+    filename_stem = Path(yaml_path).stem
+    set_if_missing(data, variable.split("."), filename_stem)
+    return data
 
 
 if __name__ == "__main__":
