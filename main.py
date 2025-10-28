@@ -405,7 +405,7 @@ def load_vars_hierarchy(yaml_path: str) -> dict | None:
     return merged_data
 
 
-def set_var_from_filename(data: dict, yaml_path: str, variable: str):
+def set_var_from_filename(data: dict, yaml_path: str, variable: str) -> str | None:
     """
     Set a variable (if it does not already exist) in a YAML dictionary from the
     filename
@@ -417,6 +417,10 @@ def set_var_from_filename(data: dict, yaml_path: str, variable: str):
         yaml_path (str): Path to the YAML file
         variable (str): Dot-separated variable name to set (e.g., "hostname" or
             "person.name")
+
+    Returns:
+        A string describing the variable set (e.g., "person.name -> Alex"), or
+            None if the variable already existed or could not be set
     """
 
     def set_if_missing(data: dict, path: list[str], value: str):
@@ -424,24 +428,32 @@ def set_var_from_filename(data: dict, yaml_path: str, variable: str):
         Recursively set a value if missing in a nested dictionary
 
         Args:
-            dct (dict): The dictionary to update
+            data (dict): The dictionary to update
             path (list[str]): List of nested keys representing the path to the
                 target
             value (str): The value to set if the key is missing
+
+        Returns:
+            bool: True if a new variable was set, False if it already existed or
+                could not be set (e.g., a non-dict value blocks the path)
         """
         key = path[0]
         if len(path) == 1:
-            data.setdefault(key, value)
+            if key not in data:
+                data[key] = value
+                return True
+            return False
         else:
             subdict = data.setdefault(key, {})
             if not isinstance(subdict, dict):
                 # If a non-dict value exists, don't overwrite it
-                return
-            set_if_missing(subdict, path[1:], value)
+                return False
+            return set_if_missing(subdict, path[1:], value)
 
     filename_stem = Path(yaml_path).stem
-    set_if_missing(data, variable.split("."), filename_stem)
-    return data
+    if set_if_missing(data, variable.split("."), filename_stem):
+        return f"{variable} -> {filename_stem}"
+    return None
 
 
 if __name__ == "__main__":
