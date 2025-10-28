@@ -5,138 +5,145 @@ from config import Config
 
 class Log:
     """
-    Logging wrapper that adds support for pre- and post-log lines
+    Logging wrapper that supports formatted headers based on predefined templates
 
-    This class wraps the standard Python logging interface and allows the use of
-    special `b` (before) and `a` (after) keyword arguments to insert additional
-    lines from a predefined dictionary (`Config.log_lines`) before
-    and after the main log messages
+    This class wraps a standard Python logger and provides an additional `h`
+    parameter that controls header formatting using templates from
+    `Config.log_lines`. When specified, the first logged message is overlaid
+    onto the header line pattern, producing a visually aligned log section
 
-    Usage:
-        log = Log()
-        log.warning("Main message", b=1, a=2)
+    Example:
+        >>> # Aassuming Config.log_lines = {1: "=" * 20, 2: "-" * 20}
+        >>> log = Log()
+        >>> log.debug("Header 1", h=1)
+        ===== Header 1 =====
+        >>> log.debug("Header 2", "Text 1", "Text 2", h=2)
+        ----- Header 2 -----
+        Text 1
+        Text 2
 
-    Output (assuming Config.log_lines = {1: "=" * 20, 2: "-" * 20}):
-        WARNING: ====================
-        WARNING: Main message
-        WARNING: --------------------
-
-    Supported log levels:
+     Supported log levels:
         - debug
         - info
         - warning
         - error
         - critical
 
-    Positional arguments:
-        *messages: Any number of strings to log as separate messages
-
-    Keyword arguments:
-        b (int, optional): Key for Config.log_lines to insert before messages
-        a (int, optional): Key for Config.log_lines to insert after messages
+    Args:
+        *messages (str): Any number of strings to log as separate messages
+        h (int, optional): Header template index used to format the first message
     """
 
     def __init__(self):
         self.logger = logging.getLogger()
 
+    def create_header_line(
+        self,
+        message: str,
+        h: int,
+        shift: int = 5,
+        sep: str = " ",
+    ) -> str:
+        """
+        Build a formatted header line by overlaying the `message` onto a header
+        line (selected based on `h` and `Config.log_lines`), replacing part of
+        it starting at the given `shift` position (adding `sep` before and after
+        the `message`) and padding (if needed) to match the length of the
+        original header line
+        """
+        header_line = Config.log_lines.get(h, "")
+        target_len = len(header_line)
+
+        result = header_line[:shift] + sep + message + sep
+        if len(result) >= target_len:
+            return result
+
+        padding = header_line[len(result) :]
+        result += padding
+        return result
+
     def _log(
         self,
         level: str,
         *messages: str,
-        b: int | None = None,
-        a: int | None = None,
+        h: int | None = None,
     ):
         """
-        Internal method to log multiple messages at a given logging level, with
-        optional pre- and post-log lines based on Config.log_lines
+        Log one or more messages at the specified level with an optional header
 
         Args:
-            level (str): The logging level to use ('debug', 'info', 'warning', 'error', 'critical')
-
-            *messages: One or more strings to be logged individually at the specified level
-
-            b (int, optional): Key into Config.log_lines. If provided and found,
-                the corresponding line will be logged before the messages
-
-            a (int, optional): Key into Config.log_lines. If provided and found,
-                the corresponding line will be logged after the messages
-
-        Behavior:
-            - Logs the "before" line (if `b` is provided and valid)
-            - Logs each message in `*messages` separately at the given level
-            - Logs the "after" line (if `a` is provided and valid)
-
-        Raises:
-            AttributeError: If the specified log level does not exist in the logger
+            level (str): Logging level name ("debug", "info", "warning",
+                "error", "critical")
+            *messages (str): One or more messages to be logged in order
+            h (int): Optional header template index used to format the first
+                message
         """
         log_func = getattr(self.logger, level, None)
         if not log_func:
             raise AttributeError(f"Invalid log level: {level}")
 
-        if b is not None:
-            before_msg = Config.log_lines.get(b)
-            if before_msg:
-                log_func(before_msg)
+        if not messages and h is not None:
+            log_func(Config.log_lines.get(h, ""))
+            return
 
-        for msg in messages:
-            log_func(msg)
-
-        if a is not None:
-            after_msg = Config.log_lines.get(a)
-            if after_msg:
-                log_func(after_msg)
+        for i, message in enumerate(messages):
+            if i == 0 and h is not None:
+                log_func(self.create_header_line(message, h=h))
+            else:
+                log_func(message)
 
     def debug(self, *args, **kwargs):
         """
-        Log debug-level messages with optional before/after lines
+        Log debug-level messages with optional header formatting
 
         Args:
-            *args: Strings to log as separate messages
-            b (int, optional): Key from Config.log_lines to insert before
-            a (int, optional): Key from Config.log_lines to insert after
+            *args (str): One or more messages to log
+            h (int, optional): Header template index from `Config.log_lines` for
+                the first message
+
         """
         self._log("debug", *args, **kwargs)
 
     def info(self, *args, **kwargs):
         """
-        Log info-level messages with optional before/after lines
+        Log info-level messages with optional header formatting
 
         Args:
-            *args: Strings to log as separate messages
-            b (int, optional): Key from Config.log_lines to insert before
-            a (int, optional): Key from Config.log_lines to insert after
+            *args (str): One or more messages to log
+            h (int, optional): Header template index from `Config.log_lines` for
+                the first message
         """
         self._log("info", *args, **kwargs)
 
     def warning(self, *args, **kwargs):
         """
-        Log warning-level messages with optional before/after lines
+        Log warning-level messages with optional header formatting
 
         Args:
-            *args: Strings to log as separate messages
-            b (int, optional): Key from Config.log_lines to insert before
-            a (int, optional): Key from Config.log_lines to insert after
+            *args (str): One or more messages to log
+            h (int, optional): Header template index from `Config.log_lines` for
+                the first message
         """
         self._log("warning", *args, **kwargs)
 
     def error(self, *args, **kwargs):
         """
-        Log error-level messages with optional before/after lines
+        Log error-level messages with optional header formatting
 
         Args:
-            *args: Strings to log as separate messages
-            b (int, optional): Key from Config.log_lines to insert before
-            a (int, optional): Key from Config.log_lines to insert after
+            *args (str): One or more messages to log
+            h (int, optional): Header template index from `Config.log_lines` for
+                the first message
         """
         self._log("error", *args, **kwargs)
 
     def critical(self, *args, **kwargs):
         """
-        Log critical-level messages with optional before/after lines
+        Log critical-level messages with optional header formatting
 
         Args:
-            *args: Strings to log as separate messages
-            b (int, optional): Key from Config.log_lines to insert before
-            a (int, optional): Key from Config.log_lines to insert after
+            *args (str): One or more messages to log
+            h (int, optional): Header template index from `Config.log_lines` for
+                the first message
         """
         self._log("critical", *args, **kwargs)

@@ -44,7 +44,7 @@ class Config:
     log_datefmt = "%Y-%m-%d %H:%M"
 
     log_lines = {
-        1: "=" * 80,
+        1: "*" * 80,
         2: "=" * 60,
         3: "-" * 60,
     }

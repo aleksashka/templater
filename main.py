@@ -378,7 +378,7 @@ def load_vars_hierarchy(yaml_path: str) -> dict | None:
     yaml_files.append(target_yaml_full_path)
 
     # Merge all YAML files in order
-    log.debug(target_yaml_full_path, b=1)
+    log.debug(target_yaml_full_path, h=1)
     merged_data = {}
     for path in yaml_files:
         if not os.path.exists(path):
@@ -389,12 +389,12 @@ def load_vars_hierarchy(yaml_path: str) -> dict | None:
             except yaml.scanner.ScannerError as error:
                 log.error(f"YAML ScannerError: {error}")
                 return
-            log.debug(path, b=2, a=3)
-            log.debug("old data", yaml.dump(merged_data), a=3)
-            log.debug("new data", yaml.dump(data), a=3)
+            log.debug(path, h=2)
+            log.debug("old data", yaml.dump(merged_data), h=3)
+            log.debug("new data", yaml.dump(data), h=3)
             merged_data = merge_dicts_deep(merged_data, data)
-            log.debug("merged data", yaml.dump(merged_data), path)
-    log.info(a=3)
+            log.debug("merged data", yaml.dump(merged_data), h=3)
+    log.info(h=3)
     log.info(f"Processed: {target_yaml_full_path}")
 
     return merged_data

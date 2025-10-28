@@ -77,4 +77,3 @@ Edit the `Config` class in `config.py`
 
 ## TODO
 - [ ] Optionally get `hostname` (make key configurable, possibly multi-level) from filename if there is no this key in the final merged yaml
-- [ ] Rewrite debug logs (overwrite lines with header texts)
