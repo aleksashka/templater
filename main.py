@@ -96,13 +96,6 @@ def generate_and_save(yaml_path: str):
     if merged_vars is None:
         return
 
-    # Add "target_type" key
-    merged_vars["target_type"] = get_target_type(relative_path)
-
-    # Set configured variable (if any) from filename
-    if Config.filename_variable is not None:
-        set_var_from_filename(merged_vars, relative_path, Config.filename_variable)
-
     # Select template based on the top-level target type (e.g. "cisco_ios")
     template_path = f"{merged_vars['target_type']}/base.j2"
     try:
@@ -115,15 +108,14 @@ def generate_and_save(yaml_path: str):
     rendered_text = template.render(merged_vars)
 
     # Save rendered text file (and optionally merged YAML)
-    config_path = save_output_files(relative_path, rendered_text, merged_vars)
-    log.info(f"Created: {config_path}")
+    save_output_files(relative_path, rendered_text, merged_vars)
 
 
 def save_output_files(
     relative_path: str,
     rendered_text: str,
     merged_vars: dict,
-) -> str:
+):
     """
     Save the rendered text file and optionally the merged YAML
 
@@ -145,9 +137,6 @@ def save_output_files(
         merged_vars (dict): Fully merged variables dictionary to save as YAML
         rendered_text (str): Rendered text to be saved as a file with
             Config.`output_ext` extension
-
-    Returns:
-        str: The full path to the saved rendered file
     """
     # Prepare the target filename
     target_filename = os.path.splitext(relative_path)[0] + Config.output_ext
@@ -157,6 +146,7 @@ def save_output_files(
     # Save the rendered file
     with open(target_path, "w") as file:
         file.write(rendered_text)
+        log.info(f"Created: {target_path}")
 
     # Save merged YAML variables if enabled
     if Config.save_merged_yamls:
@@ -170,8 +160,7 @@ def save_output_files(
         os.makedirs(os.path.dirname(merged_yaml_path), exist_ok=True)
         with open(merged_yaml_path, "w") as yaml_file:
             yaml.dump(merged_vars, yaml_file)
-
-    return target_path
+        log.info(f"Created: {merged_yaml_path}")
 
 
 def merge_dicts_deep(base: dict, override: dict) -> dict:
@@ -399,6 +388,17 @@ def load_vars_hierarchy(yaml_path: str) -> dict | None:
             log.debug("new data", yaml.dump(data), h=3)
             merged_data = merge_dicts_deep(merged_data, data)
             log.debug("merged data", yaml.dump(merged_data), h=3)
+
+    # Add "target_type" key
+    merged_data["target_type"] = get_target_type(yaml_path)
+    log.debug(f"target_type -> {merged_data['target_type']}", h=2)
+
+    # Set configured variable (if any) from filename
+    if Config.filename_variable is not None:
+        result = set_var_from_filename(merged_data, yaml_path, Config.filename_variable)
+        if result:
+            log.debug(result, h=2)
+
     log.info(h=3)
     log.info(f"Processed: {target_yaml_full_path}")
 
