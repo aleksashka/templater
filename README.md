@@ -38,7 +38,7 @@ In case of:
 - `merged_yamls_path = None` (default)
 
 ```text
-_input_data/
+_output_data/
 ├── cisco_ios/
 │   └── router/
 │       └── my-target.txt
@@ -53,7 +53,7 @@ In case of:
 - `merged_yamls_path = "merged_yamls"`
 
 ```text
-_input_data/
+_output_data/
 ├── cisco_ios/
 │   └── router/
 │       └── my-target.txt
