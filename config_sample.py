@@ -1,6 +1,8 @@
 import logging
 from pathlib import Path
 
+from logger import Log
+
 
 class Config:
     # Root path for input/output directories (relative to `main.py`)
@@ -63,3 +65,24 @@ class Config:
     input_data_dir = str(Path(base_dirname).joinpath(input_data_dirname))
     input_templates_dir = str(Path(base_dirname).joinpath(input_templates_dirname))
     output_data_dir = str(Path(base_dirname).joinpath(output_data_dirname))
+
+    log: Log | None = None  # Will be initialized later
+
+    @classmethod
+    def _init_logger(cls):
+        """
+        Initialize the global Log instance (once)
+        """
+        if cls.log is not None:
+            return  # Already initialized
+
+        logging.basicConfig(
+            level=cls.log_level,
+            style=cls.log_style,
+            format=cls.log_format,
+            datefmt=cls.log_datefmt,
+        )
+        cls.log = Log(log_lines=cls.log_lines)
+
+
+Config._init_logger()

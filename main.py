@@ -1,25 +1,15 @@
 import os
 import copy
-import logging
 from pathlib import Path
 from typing import Generator
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from logger import Log
 from config import Config
 
 
-logging.basicConfig(
-    level=Config.log_level,
-    style=Config.log_style,
-    format=Config.log_format,
-    datefmt=Config.log_datefmt,
-)
-
-
-log = Log(log_lines=Config.log_lines)
+log = Config.log
 env = Environment(
     loader=FileSystemLoader(Config.input_templates_dir),
     autoescape=select_autoescape(disabled_extensions=("j2")),
