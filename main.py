@@ -27,8 +27,10 @@ env = Environment(
 
 
 def main():
+    log.info(f"Start working on YAML-files in {Config.input_data_dir}")
     for yaml_path in find_target_yaml_files(Config.input_data_dir):
         generate_and_save(yaml_path)
+    log.info("Program finished")
 
 
 def path_should_be_skipped(path: str) -> bool:
