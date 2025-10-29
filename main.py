@@ -19,7 +19,7 @@ logging.basicConfig(
 )
 
 
-log = Log()
+log = Log(log_lines=Config.log_lines)
 env = Environment(
     loader=FileSystemLoader(Config.input_templates_dir),
     autoescape=select_autoescape(disabled_extensions=("j2")),

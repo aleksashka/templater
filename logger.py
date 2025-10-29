@@ -1,20 +1,17 @@
 import logging
 
-from config import Config
-
 
 class Log:
     """
     Logging wrapper that supports formatted headers based on predefined templates
 
     This class wraps a standard Python logger and provides an additional `h`
-    parameter that controls header formatting using templates from
-    `Config.log_lines`. When specified, the first logged message is overlaid
-    onto the header line pattern, producing a visually aligned log section
+    parameter that controls header formatting using templates from `log_lines`.
+    When specified, the first logged message is overlaid onto the header line
+    pattern, producing a visually aligned log section
 
     Example:
-        >>> # Aassuming Config.log_lines = {1: "=" * 20, 2: "-" * 20}
-        >>> log = Log()
+        >>> log = Log(log_lines={1: "=" * 20, 2: "-" * 20})
         >>> log.debug("Header 1", h=1)
         ===== Header 1 =====
         >>> log.debug("Header 2", "Text 1", "Text 2", h=2)
@@ -34,8 +31,9 @@ class Log:
         h (int, optional): Header template index used to format the first message
     """
 
-    def __init__(self):
+    def __init__(self, log_lines: dict[int, str]):
         self.logger = logging.getLogger()
+        self.log_lines = log_lines
 
     def create_header_line(
         self,
@@ -46,12 +44,12 @@ class Log:
     ) -> str:
         """
         Build a formatted header line by overlaying the `message` onto a header
-        line (selected based on `h` and `Config.log_lines`), replacing part of
-        it starting at the given `shift` position (adding `sep` before and after
+        line (selected based on `h` and `log_lines`), replacing part of it
+        starting at the given `shift` position (adding `sep` before and after
         the `message`) and padding (if needed) to match the length of the
         original header line
         """
-        header_line = Config.log_lines.get(h, "")
+        header_line = self.log_lines.get(h, "")
         target_len = len(header_line)
 
         result = header_line[:shift] + sep + message + sep
@@ -83,7 +81,7 @@ class Log:
             raise AttributeError(f"Invalid log level: {level}")
 
         if not messages and h is not None:
-            log_func(Config.log_lines.get(h, ""))
+            log_func(self.log_lines.get(h, ""))
             return
 
         for i, message in enumerate(messages):
@@ -98,8 +96,8 @@ class Log:
 
         Args:
             *args (str): One or more messages to log
-            h (int, optional): Header template index from `Config.log_lines` for
-                the first message
+            h (int, optional): Header template index from `log_lines` for the
+                first message
 
         """
         self._log("debug", *args, **kwargs)
@@ -110,8 +108,8 @@ class Log:
 
         Args:
             *args (str): One or more messages to log
-            h (int, optional): Header template index from `Config.log_lines` for
-                the first message
+            h (int, optional): Header template index from `log_lines` for the
+                first message
         """
         self._log("info", *args, **kwargs)
 
@@ -121,8 +119,8 @@ class Log:
 
         Args:
             *args (str): One or more messages to log
-            h (int, optional): Header template index from `Config.log_lines` for
-                the first message
+            h (int, optional): Header template index from `log_lines` for the
+                first message
         """
         self._log("warning", *args, **kwargs)
 
@@ -132,8 +130,8 @@ class Log:
 
         Args:
             *args (str): One or more messages to log
-            h (int, optional): Header template index from `Config.log_lines` for
-                the first message
+            h (int, optional): Header template index from `log_lines` for the
+                first message
         """
         self._log("error", *args, **kwargs)
 
@@ -143,7 +141,7 @@ class Log:
 
         Args:
             *args (str): One or more messages to log
-            h (int, optional): Header template index from `Config.log_lines` for
-                the first message
+            h (int, optional): Header template index from `log_lines` for the
+                first message
         """
         self._log("critical", *args, **kwargs)
