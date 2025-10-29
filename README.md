@@ -67,6 +67,7 @@ merged_yamls/
 
 To create `some_text.txt` based on `some_name` template (e.g. `cisco`, `juniper`, whatever):
 1. Copy `config_sample.py` to `config.py` to create default configuration (or use provided `init_project.py` to automatically create `config.py` and after timeout create necessary directories)
+1. Working directories (with input/output files) can be placed in some `Config.base_dirname` (by default "." - next to `main.py`)
 1. Define your optional `vars.yaml` (will be merged) files under `_input_data/` (any number of levels deep)
 1. Define your `some_text.yaml` file somewhere under `_input_data/some_name/`
 1. Create your Jinja2 template `_input_templates/some_name/base.j2` (other templates may be added)
