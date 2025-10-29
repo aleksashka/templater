@@ -1,6 +1,8 @@
 import logging
 from pathlib import Path
 
+import yaml
+
 from logger import Log
 
 
@@ -15,6 +17,9 @@ class Config:
 
     vars_filename = "vars.yaml"
     output_ext = ".txt"
+
+    # Optional YAML file in `base_dirname` to override default config values
+    config_override_filename = "config.yaml"
 
     # Name of variable to derive from target YAML filename (if unset)
     filename_variable = None  # Do not use this feature
@@ -62,10 +67,7 @@ class Config:
         3: "-" * 60,
     }
 
-    input_data_dir = str(Path(base_dirname).joinpath(input_data_dirname))
-    input_templates_dir = str(Path(base_dirname).joinpath(input_templates_dirname))
-    output_data_dir = str(Path(base_dirname).joinpath(output_data_dirname))
-
+    _pending_logs: list[str] = []  # Store logs until logger is initialized
     log: Log | None = None  # Will be initialized later
 
     @classmethod
@@ -83,6 +85,51 @@ class Config:
             datefmt=cls.log_datefmt,
         )
         cls.log = Log(log_lines=cls.log_lines)
+        for msg in cls._pending_logs:
+            cls.log.info(msg)
+        cls._pending_logs.clear()
+
+    @classmethod
+    def set_paths(cls):
+        cls.input_data_dir = str(Path(cls.base_dirname) / cls.input_data_dirname)
+        cls.input_templates_dir = str(
+            Path(cls.base_dirname) / cls.input_templates_dirname
+        )
+        cls.output_data_dir = str(Path(cls.base_dirname) / cls.output_data_dirname)
+
+    @classmethod
+    def apply_overrides(cls):
+        """
+        Load `cls.config_override_filename` and override attributes
+        """
+        cls.set_paths()
+        override_path = Path(cls.base_dirname) / cls.config_override_filename
+
+        if not override_path.exists():
+            cls._pending_logs.append(f"Skipping {override_path}: Not found")
+            return
+
+        try:
+            overrides = yaml.safe_load(override_path.read_text()) or {}
+        except Exception as e:
+            cls._pending_logs.append(f"Skipping {override_path}: {e}")
+            return
+
+        if not isinstance(overrides, dict):
+            cls._pending_logs.append(f"Skipping {override_path}: invalid format")
+            return
+
+        cls._pending_logs.append(f"Start processing {override_path}")
+        for key, value in overrides.items():
+            if not key.startswith("_") and hasattr(cls, key):
+                old_value = getattr(cls, key)
+                setattr(cls, key, value)
+                log_line = f"  override {key}: {old_value!r} -> {value!r}"
+                cls._pending_logs.append(log_line)
+        cls._pending_logs.append(f"Done processing {override_path}")
+
+        cls.set_paths()
 
 
+Config.apply_overrides()
 Config._init_logger()

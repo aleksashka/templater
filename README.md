@@ -76,3 +76,4 @@ To create `some_text.txt` based on `some_name` template (e.g. `cisco`, `juniper`
 ## Configuration
 
 Edit the `Config` class in `config.py`
+Place `config.yaml` (filename is configurable) under `Config.base_dirname` to override global settings
