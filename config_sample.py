@@ -1,10 +1,16 @@
 import logging
+from pathlib import Path
 
 
 class Config:
-    input_data_dir = "_input_data"
-    input_templates_dir = "_input_templates"
-    output_data_dir = "_output_data"
+    # Root path for input/output directories (relative to `main.py`)
+    base_dirname = "."
+
+    # Names of working directories (inside `base_dirname`)
+    input_data_dirname = "_input_data"
+    input_templates_dirname = "_input_templates"
+    output_data_dirname = "_output_data"
+
     vars_filename = "vars.yaml"
     output_ext = ".txt"
 
@@ -53,3 +59,7 @@ class Config:
         2: "=" * 60,
         3: "-" * 60,
     }
+
+    input_data_dir = str(Path(base_dirname).joinpath(input_data_dirname))
+    input_templates_dir = str(Path(base_dirname).joinpath(input_templates_dirname))
+    output_data_dir = str(Path(base_dirname).joinpath(output_data_dirname))
