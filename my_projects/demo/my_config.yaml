@@ -1,0 +1,5 @@
+filename_variable: name
+save_merged_yamls: true
+
+log_level: 10
+log_format: "{message}"

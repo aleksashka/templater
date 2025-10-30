@@ -1,0 +1,5 @@
+species: Delphinus delphis
+abilities__remove:
+  - walks
+abilities__append:
+  - swims

@@ -1,0 +1,4 @@
+class: Aves
+abilities__append:
+  - flies
+  - lays eggs

@@ -1,0 +1,4 @@
+class: Mammalia
+abilities__append:
+  - walks
+  - produces milk
