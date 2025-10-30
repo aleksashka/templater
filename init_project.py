@@ -6,7 +6,7 @@ from pathlib import Path
 
 def main():
     required_files = {
-        "config.py": "config_sample.py",
+        "my_config.yaml": "my_config_sample.yaml",
     }
     make_sure_required_files_are_present(required_files)
 

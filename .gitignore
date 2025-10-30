@@ -2,7 +2,5 @@
 __pycache__/
 
 config.py
-_input_data/
-_input_templates/
-_output_data/
-merged_yamls/
+my_projects/
+my_config.yaml

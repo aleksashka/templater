@@ -1,0 +1,49 @@
+# Root path for input/output directories (relative to `main.py`)
+base_dirname: my_projects/demo # Default
+
+# Names of working directories (inside `base_dirname`)
+input_data_dirname: input_data # Default
+input_templates_dirname: input_templates # Default
+output_data_dirname: output_data # Default
+
+# Optional YAML file in `base_dirname` (and/or deeper) to update variables
+vars_filename: vars.yaml # Default
+output_ext: .txt # Default
+
+# Global and/or per-project filename to override default configuration
+config_override_filename: my_config.yaml # Default
+
+# Name of variable to derive from target YAML filename (if not already set)
+# filename_variable: hostname # File `GW01.yaml` will result in {hostname: GW01}
+# filename_variable: person.name # `Alex.yaml` -> {person: {name: Alex}}
+filename_variable: null # Default
+
+# Set to a string (e.g. "skip_") to skip YAMLs/dirs with this prefix. Does not
+# apply to the working directories
+skip_prefix: null # Default
+
+# Whether to save final (fully merged) YAML files
+save_merged_yamls: false # Default
+
+# In case `save_merged_yamls` is `true`:
+# Optional root directory for saving final (merged) YAML files.  If set to None,
+# YAML files will be saved in a "yamls" subdirectory in `output_data_dir`
+# directory where rendered output files are saved (e.g., _output_data/yamls/)
+# Examples:
+#   merged_yamls_path: null
+#     _input_data/cisco_ios/router/my-device.yaml ->
+#     _output_data/yamls/cisco_ios/router/my-device.yaml
+#   merged_yamls_path: merged_yamls
+#     _input_data/cisco_ios/router/my-device.yaml ->
+#     merged_yamls/cisco_ios/router/my-device.yaml
+merged_yamls_path: null # Default
+
+# https://docs.python.org/3/library/logging.html#logging.basicConfig
+log_level: 30 # 30 - warning (default), 20 - info, 10 - debug
+
+log_style: "{" # Default
+
+log_format: "[{asctime}] {levelname:<8} {message}" # Default
+# log_format: "{message}" # Better for debugging
+
+log_datefmt: "%Y-%m-%d %H:%M:%S" # Default
