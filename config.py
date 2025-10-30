@@ -80,6 +80,8 @@ class Config:
         for key, value in data.items():
             if hasattr(cls, key):
                 old = getattr(cls, key)
+                if old == value:
+                    continue
                 setattr(cls, key, value)
                 cls._pending_logs.append(f"  override {key}: {old!r} -> {value!r}")
         cls._pending_logs.append(f"Done processing {path}")
