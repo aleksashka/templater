@@ -1,6 +1,5 @@
 .venv/
 __pycache__/
 
-config.py
 my_projects/
 my_config.yaml
