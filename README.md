@@ -191,3 +191,23 @@ To create `some_text.txt` based on `some_name` template (e.g. `cisco`, `juniper`
 1. Define your `some_text.yaml` file somewhere under `input_data/some_name/` (`some_name` part becomes the `target_type` variable and is used for template selection)
 1. Create your Jinja2 template `input_templates/some_name/base.j2` (child templates may be added to be included in the base one)
 1. Run the main script: `python main.py`
+
+## Thoughts/TODOs
+- [ ] Select template using YAML's own variable (template_name: base)
+  - [ ] {template_name: null} to use target_type (object_type in future?)?
+  - [ ] {template_name: template_dir/base} (`.j2` will be appended)
+  - [ ] {template_dir: .} or {template_dir: templates}
+  - [ ] In case {template_name: invitaion/base} save to output_data/invitation/ subdir? Make it optional (in case of `null` place to the same output dir)?
+
+- [ ] Choose the project when running main.py? `python main.py demo`
+
+- [ ] Variable `default_project`:
+  - [ ] `None` means to either get project as argument or interactively show a list of available projects
+  - [ ] String shows which project to run on if no argument was given
+
+- [ ] Project initialization using `init_project.py`:
+  - [ ] Interactive or both? Only new projects or new target_types as well?
+  - [ ] `init_project.py [project_dir] --activate|-a`
+  - [ ] Create:
+    - [ ] project_dir/input_data/target_type, input_template/target_type
+    - [ ] target_type/vars.yaml, target_type/base.j2
