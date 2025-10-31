@@ -132,6 +132,56 @@ merged_yamls_path: merged_yamls
             └── my-target.yaml
 ```
 
+## Installation copy/paste scripts
+
+<details>
+<summary>for Windows using <code>py</code></summary>
+
+```text
+git clone https://github.com/aleksashka/templater.git
+cd templater
+py -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+</details>
+
+<details>
+<summary>for Windows using <code>python</code></summary>
+
+```text
+git clone https://github.com/aleksashka/templater.git
+cd templater
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+</details>
+
+<details>
+<summary>for *nix using <code>python</code></summary>
+
+```text
+git clone https://github.com/aleksashka/templater.git
+cd templater
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+</details>
+
+<details>
+<summary>for *nix using <code>python3</code></summary>
+
+```text
+git clone https://github.com/aleksashka/templater.git
+cd templater
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+</details>
+
 ## Usage
 
 To create `some_text.txt` based on `some_name` template (e.g. `cisco`, `juniper`, whatever):
