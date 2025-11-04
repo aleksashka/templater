@@ -22,6 +22,8 @@ class Config:
     output_ext = ".txt"
 
     filename_variable = None
+    template_subdir = "."  # No additional subdirectory
+    template_name = "base"
 
     skip_prefix = None
 

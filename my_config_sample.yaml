@@ -21,6 +21,12 @@ output_ext: .txt # Default
 # filename_variable: person.name # `Alex.yaml` -> {person: {name: Alex}}
 filename_variable: null # Default
 
+# Additional subdirectory for the final template
+template_subdir: . # Default: No additional subdirectory
+
+# Template name without ".j2" extension
+template_name: base # Default
+
 # Set to a string (e.g. "skip_") to skip YAMLs/dirs with this prefix. Does not
 # apply to the working directories
 skip_prefix: null # Default

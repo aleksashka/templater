@@ -3,6 +3,7 @@ templates_dirname: input_templates
 output_dirname: output_data
 
 filename_variable: name
+template_subdir: animals
 save_merged_yamls: true
 
 log_level: 10

@@ -67,12 +67,11 @@ def generate_and_save(yaml_path: str):
     Generate and save a text file based on the provided path the target YAML
 
     This function:
-    - Loads the target YAML data, noting `target_type` (directory name
-        immediately inside Config.`input_data_dir`)
+    - Loads the target YAML data
     - Merges it with inherited variables from all applicable
         Config.`vars_filename` files
-    - Selects the appropriate template ("base.j2") inside the `target_type`
-        directory
+    - Selects the appropriate template based on configured and inherited
+        variables
     - Renders the output text
     - Saves the outputs (text file and optinally final merged YAML)
 
@@ -88,19 +87,39 @@ def generate_and_save(yaml_path: str):
     if merged_vars is None:
         return
 
-    # Select template based on the top-level target type (e.g. "cisco_ios")
-    template_path = f"{merged_vars['target_type']}/base.j2"
+    # Get the template based on inherited subdir and name
+    template_path = get_template_path(merged_vars)
     try:
         template = env.get_template(template_path)
     except Exception as error:
         log.error(f"Error while loading template '{template_path}': {error}")
         return
+    log.debug(f"Loaded: {template_path}")
 
     # Render the final text file
     rendered_text = template.render(merged_vars)
 
     # Save rendered text file (and optionally merged YAML)
     save_output_files(relative_path, rendered_text, merged_vars)
+
+
+def get_template_path(merged_vars: dict[str, str]) -> str:
+    """
+    Build a Posix path to a Jinja2 template file
+
+    Combines "template_subdir" and "template_name" from `merged_vars` into a
+    path and appends the ".j2" extension
+
+    Args:
+        merged_vars (dict[str, str]): Variables containing template path parts
+
+    Returns:
+        str: Posix path to the template file ending with ".j2"
+    """
+    result = Path(merged_vars["template_subdir"])
+    result /= merged_vars["template_name"]
+    result = result.with_suffix(".j2")
+    return str(result.as_posix())
 
 
 def save_output_files(
@@ -313,22 +332,6 @@ def remove_false_values(target: dict, override: dict):
             target.pop(key, None)
 
 
-def get_target_type(yaml_path: str) -> str:
-    """
-    Extracts the top-level directory name from a relative YAML path to represent
-    the target type (e.g., 'cisco_ios', 'juniper', 'whatever')
-
-    Args:
-        yaml_path (str): Relative path to the target YAML file (relative from
-            the root of Config.`input_data_dir`)
-
-    Returns:
-        str: Top-level directory name representing the taget type
-    """
-    target_type = yaml_path.replace("\\", "/").split("/")[0]
-    return target_type
-
-
 def load_vars_hierarchy(yaml_path: str) -> dict | None:
     """
     Loads and deeply merges all Config.`vars_filename` files found along the
@@ -381,15 +384,19 @@ def load_vars_hierarchy(yaml_path: str) -> dict | None:
             merged_data = merge_dicts_deep(merged_data, data)
             log.debug("merged data", yaml.dump(merged_data), h=3)
 
-    # Add "target_type" key
-    merged_data["target_type"] = get_target_type(yaml_path)
-    log.debug(f"target_type -> {merged_data['target_type']}", h=2)
+    log.debug("Checking for filename and template settings", h=2)
 
     # Set configured variable (if any) from filename
     if Config.filename_variable is not None:
         result = set_var_from_filename(merged_data, yaml_path, Config.filename_variable)
         if result:
-            log.debug(result, h=2)
+            log.debug(f"Set {result}")
+
+    for key in ("template_subdir", "template_name"):
+        if not merged_data.get(key):
+            value = getattr(Config, key)
+            merged_data[key] = value
+            log.debug(f"Set {key} -> {value}")
 
     log.info(h=3)
     log.info(f"Processed: {target_yaml_full_path}")
