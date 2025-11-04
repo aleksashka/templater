@@ -1,3 +1,7 @@
+input_dirname: input_data
+templates_dirname: input_templates
+output_dirname: output_data
+
 filename_variable: name
 save_merged_yamls: true
 

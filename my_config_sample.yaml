@@ -1,17 +1,20 @@
-# Root path for input/output directories (relative to `main.py`)
-base_dirname: my_projects/demo # Default
+# Global and/or per-project file to override default configuration
+config_filename: my_config.yaml # Default
 
-# Names of working directories (inside `base_dirname`)
-input_data_dirname: input_data # Default
-input_templates_dirname: input_templates # Default
-output_data_dirname: output_data # Default
+# Path to the project (relative to `main.py`)
+projects_dir: my_projects # Default
+project_name: demo # Default
 
-# Optional YAML file in `base_dirname` (and/or deeper) to update variables
+# Names of working directories (inside the project directory)
+input_dirname: input # Default
+templates_dirname: null # Default
+output_dirname: output # Default
+
+# Optional YAML files in the project directory (and deeper) to update variables
 vars_filename: vars.yaml # Default
-output_ext: .txt # Default
 
-# Global and/or per-project filename to override default configuration
-config_override_filename: my_config.yaml # Default
+# Extensions
+output_ext: .txt # Default
 
 # Name of variable to derive from target YAML filename (if not already set)
 # filename_variable: hostname # File `GW01.yaml` will result in {hostname: GW01}

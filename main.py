@@ -11,14 +11,14 @@ from config import Config
 
 log = Config.log
 env = Environment(
-    loader=FileSystemLoader(Config.input_templates_dir),
+    loader=FileSystemLoader(Config.templates_dir),
     autoescape=select_autoescape(disabled_extensions=("j2")),
 )
 
 
 def main():
-    log.info(f"Start working on YAML-files in {Config.input_data_dir}")
-    for yaml_path in find_target_yaml_files(Config.input_data_dir):
+    log.info(f"Start working on YAML-files in {Config.input_dir}")
+    for yaml_path in find_target_yaml_files(Config.input_dir):
         generate_and_save(yaml_path)
     log.info("Program finished")
 
@@ -42,8 +42,8 @@ def find_target_yaml_files(root_dir: str) -> Generator[str, None, None]:
         root_dir (str): Root (starting) directory to search for YAML files
 
     Yields:
-        str: Full path to each YAML file (excluding `Config.vars_filename`
-            files)
+        str: Full path to each YAML file (excluding `Config.vars_filename` and
+            `Config.config_filename` files)
     """
     for dirpath, _, filenames in os.walk(root_dir):
         if path_should_be_skipped(os.path.basename(dirpath)):
@@ -56,8 +56,8 @@ def find_target_yaml_files(root_dir: str) -> Generator[str, None, None]:
             if not file.endswith(".yaml"):
                 # Ignore non-yaml files
                 continue
-            if file == Config.vars_filename:
-                # Ignore `vars_filename` files
+            if file in [Config.vars_filename, Config.config_filename]:
+                # Ignore configuration files
                 continue
             yield os.path.join(dirpath, file)
 
@@ -81,7 +81,7 @@ def generate_and_save(yaml_path: str):
     """
 
     # Compute path relative to the `input_data_dir`
-    relative_path = os.path.relpath(yaml_path, Config.input_data_dir)
+    relative_path = os.path.relpath(yaml_path, Config.input_dir)
 
     # Merge all inherited and target-specific variables
     merged_vars = load_vars_hierarchy(relative_path)
@@ -132,7 +132,7 @@ def save_output_files(
     """
     # Prepare the target filename
     target_filename = os.path.splitext(relative_path)[0] + Config.output_ext
-    target_path = os.path.join(Config.output_data_dir, target_filename)
+    target_path = os.path.join(Config.output_dir, target_filename)
     os.makedirs(os.path.dirname(target_path), exist_ok=True)
 
     # Save the rendered file
@@ -147,7 +147,7 @@ def save_output_files(
         if Config.merged_yamls_path:
             merged_yaml_path = os.path.join(Config.merged_yamls_path, yaml_name)
         else:
-            merged_yaml_path = os.path.join(Config.output_data_dir, "yamls", yaml_name)
+            merged_yaml_path = os.path.join(Config.output_dir, "yamls", yaml_name)
 
         os.makedirs(os.path.dirname(merged_yaml_path), exist_ok=True)
         with open(merged_yaml_path, "w") as yaml_file:
@@ -356,11 +356,11 @@ def load_vars_hierarchy(yaml_path: str) -> dict | None:
     for i in range(len(path_parts) + 1):
         # Build path to Config.`vars_filename` at this level
         partial_path = os.path.join(*path_parts[:i], Config.vars_filename)
-        full_path = os.path.join(Config.input_data_dir, partial_path)
+        full_path = os.path.join(Config.input_dir, partial_path)
         yaml_files.append(full_path)
 
     # Add the target YAML file itself at the end
-    target_yaml_full_path = os.path.join(Config.input_data_dir, yaml_path)
+    target_yaml_full_path = os.path.join(Config.input_dir, yaml_path)
     yaml_files.append(target_yaml_full_path)
 
     # Merge all YAML files in order

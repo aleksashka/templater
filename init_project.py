@@ -13,11 +13,11 @@ def main():
     from config import Config
 
     required_dirs = [
-        Path(Config.input_data_dir),
-        Path(Config.input_templates_dir),
-        Path(Config.output_data_dir),
+        Path(Config.input_dir),
+        Path(Config.templates_dir),
+        Path(Config.output_dir),
         Path(
-            Path(Config.output_data_dir).joinpath("yamls")
+            Path(Config.output_dir).joinpath("yamls")
             if Config.merged_yamls_path is None
             else Config.merged_yamls_path
         ),

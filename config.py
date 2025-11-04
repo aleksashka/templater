@@ -10,13 +10,14 @@ class Config:
     # Default configuration settings
     # May be overridden by `my_config.yaml` (globally and/or per-project)
 
-    base_dirname = "my_projects/demo"
+    projects_dir = "my_projects"
+    project_name = "demo"
 
-    input_data_dirname = "input_data"
-    input_templates_dirname = "input_templates"
-    output_data_dirname = "output_data"
+    input_dirname = "input"
+    templates_dirname = None  # The same as `input_dirname`
+    output_dirname = "output"
 
-    config_override_filename = "my_config.yaml"
+    config_filename = "my_config.yaml"
     vars_filename = "vars.yaml"
     output_ext = ".txt"
 
@@ -89,21 +90,25 @@ class Config:
     @classmethod
     def apply_overrides(cls):
         """
-        Load global and optional local `cls.config_override_filename`
+        Apply optional `cls.config_filename` (global and local)
         """
-        # Global override
-        cls._load_yaml(Path(cls.config_override_filename))
+        # Override defaults with global config
+        cls._load_yaml(Path(cls.config_filename))
 
-        # Local override if base_dirname != "."
-        if cls.base_dirname != ".":
-            local_path = Path(cls.base_dirname) / cls.config_override_filename
+        # Construct project path from it's dir and name
+        cls.project_path = str(Path(cls.projects_dir) / cls.project_name)
+
+        # Load local configuration
+        if cls.project_path != ".":
+            local_path = Path(cls.project_path) / cls.config_filename
             cls._load_yaml(local_path)
 
-        cls.input_data_dir = str(Path(cls.base_dirname) / cls.input_data_dirname)
-        cls.input_templates_dir = str(
-            Path(cls.base_dirname) / cls.input_templates_dirname
-        )
-        cls.output_data_dir = str(Path(cls.base_dirname) / cls.output_data_dirname)
+        cls.input_dir = str(Path(cls.project_path) / cls.input_dirname)
+        if cls.templates_dirname:
+            cls.templates_dir = str(Path(cls.project_path) / cls.templates_dirname)
+        else:
+            cls.templates_dir = cls.input_dir
+        cls.output_dir = str(Path(cls.project_path) / cls.output_dirname)
 
 
 Config.apply_overrides()
