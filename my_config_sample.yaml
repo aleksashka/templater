@@ -7,7 +7,7 @@ project_name: demo # Default
 
 # Names of working directories (inside the project directory)
 input_dirname: input # Default
-templates_dirname: null # Default
+templates_dirname: null # Default (same as `input_dirname`)
 output_dirname: output # Default
 
 # Optional YAML files in the project directory (and deeper) to update variables
