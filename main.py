@@ -167,14 +167,9 @@ def save_output_files(
 
     # Save merged YAML variables if enabled
     if Config.save_merged_yamls:
-        # Determine YAML output path according to Config.`merged_yamls_path`
-        yaml_name = os.path.splitext(relative_path)[0] + ".yaml"
-        if Config.merged_yamls_path:
-            merged_yaml_path = os.path.join(Config.merged_yamls_path, yaml_name)
-        else:
-            merged_yaml_path = os.path.join(Config.output_dir, "yamls", yaml_name)
+        merged_yaml_path = Path(Config.output_yamls_dir) / relative_path
+        merged_yaml_path.parent.mkdir(parents=True, exist_ok=True)
 
-        os.makedirs(os.path.dirname(merged_yaml_path), exist_ok=True)
         with open(merged_yaml_path, "w") as yaml_file:
             yaml.dump(merged_vars, yaml_file)
         log.info(f"Created: {merged_yaml_path}")

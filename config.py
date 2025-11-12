@@ -134,4 +134,11 @@ class Config:
         else:
             cls.templates_dir = cls.input_dir
         cls.output_dir = str(Path(cls.project_path) / cls.output_dirname)
+
+        # Set relative directory for output YAMLs
+        if Config.merged_yamls_path is None:
+            cls.output_yamls_dir = str(Path(Config.output_dir) / "yamls")
+        else:
+            cls.output_yamls_dir = Config.merged_yamls_path
+
         cls._init_logger()
