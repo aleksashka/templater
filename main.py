@@ -85,7 +85,7 @@ def generate_and_save(yaml_path: str):
         yaml_path (str): Full path to the target YAML file
     """
 
-    # Compute path relative to the `input_data_dir`
+    # Compute path relative to the `input_dir`
     relative_path = os.path.relpath(yaml_path, Config.input_dir)
 
     # Merge all inherited and target-specific variables
@@ -138,19 +138,19 @@ def save_output_files(
 
     Behavior:
     - The rendered text file is always saved (with a configured extension) in
-        the `output_data_dir`, preserving the relative structure
+        the `output_dir`, preserving the relative structure
     - If Config.`save_merged_yamls` is True, the merged YAML variables are saved
         as well:
         * If Config.`merged_yamls_path` is None, then YAML files are saved in a
-            "yamls" subdirectory inside the `output_data_dir`, preserving
-            relative paths
+            "yamls" subdirectory inside the `output_dir`, preserving relative
+                paths
         * If Config.`merged_yamls_path` is a string, then YAML files are saved
-            under that directory (next to the `output_data_dir`), preserving
-            relative paths
+            under that directory (next to the `output_dir`), preserving relative
+                paths
 
     Args:
         relative_path (str): Relative path to the target YAML file (relative to
-            the Config.`input_data_dir`)
+            the Config.`input_dir`)
         merged_vars (dict): Fully merged variables dictionary to save as YAML
         rendered_text (str): Rendered text to be saved as a file with
             Config.`output_ext` extension
@@ -347,14 +347,14 @@ def load_vars_hierarchy(yaml_path: str) -> dict | None:
     Supports advanced override features via `deep_merge_custom`
 
     Example hierarchy:
-    - `input_data_dir`/vars.yaml (global)
-    - `input_data_dir`/cisco_ios/vars.yaml (vendor-specific)
-    - `input_data_dir`/cisco_ios/router/vars.yaml (role-specific)
-    - `input_data_dir`/cisco_ios/router/new_york.yaml (target-specific)
+    - `input_dir`/vars.yaml (global)
+    - `input_dir`/cisco_ios/vars.yaml (vendor-specific)
+    - `input_dir`/cisco_ios/router/vars.yaml (role-specific)
+    - `input_dir`/cisco_ios/router/new_york.yaml (target-specific)
 
     Args:
-        yaml_path (str): Relative path (starting from Config.`input_data_dir`)
-            to the target YAML
+        yaml_path (str): Relative path (starting from Config.`input_dir`) to the
+            target YAML
 
     Returns:
         dict: Fully merged variable dictionary

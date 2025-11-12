@@ -29,7 +29,7 @@ class Config:
     skip_prefix = None
 
     save_merged_yamls = False
-    merged_yamls_path = None
+    merged_yamls_path: str | None = None
 
     log_level = logging.WARNING  # 30
     log_style = "{"
