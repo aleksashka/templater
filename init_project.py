@@ -3,6 +3,11 @@ import time
 import shutil
 from pathlib import Path
 
+from utils import make_parser
+
+
+args = make_parser("Initialize the project").parse_args()
+
 
 def main():
     required_files = {
@@ -11,6 +16,8 @@ def main():
     make_sure_required_files_are_present(required_files)
 
     from config import Config
+
+    Config.load_config(project_name=args.project_name)
 
     required_dirs = [
         Path(Config.input_dir),

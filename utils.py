@@ -1,4 +1,5 @@
 import logging
+import argparse
 
 
 class Log:
@@ -145,3 +146,17 @@ class Log:
                 first message
         """
         self._log("critical", *args, **kwargs)
+
+
+def make_parser(description: str) -> argparse.ArgumentParser:
+    """
+    Create a common argument parser with the provided description
+    """
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument(
+        "project_name",
+        nargs="?",
+        default=None,
+        help="Project name (default: demo)",
+    )
+    return parser

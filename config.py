@@ -12,6 +12,7 @@ class Config:
 
     projects_dir = "my_projects"
     project_name = "demo"
+    project_name_locked = False  # Disable project name overwrites
 
     input_dirname = "input"
     templates_dirname = None  # The same as `input_dirname`
@@ -82,6 +83,10 @@ class Config:
         cls._pending_logs.append(f"Start processing {path}")
         for key, value in data.items():
             if hasattr(cls, key):
+                # Do not overwrite the `project_name` if locked
+                if key == "project_name" and cls.project_name_locked:
+                    continue
+
                 old = getattr(cls, key)
                 if old == value:
                     continue
@@ -90,20 +95,38 @@ class Config:
         cls._pending_logs.append(f"Done processing {path}")
 
     @classmethod
-    def apply_overrides(cls):
+    def load_config(
+        cls,
+        project_name: str | None = None,
+    ):
         """
-        Apply optional `cls.config_filename` (global and local)
+        Load configuration from YAML files and initialize project paths and
+        logger
+
+        If `project_name` is provided, it is set and locked to prevent
+        overwriting from YAML. The method loads the global and (if present)
+        project-specific configurations, updates input/output/template
+        directories, and initializes the logger
+
+        Args:
+            project_name (str | None): Optional fixed project name
         """
+        # Lock the project_name if provided
+        if project_name:
+            cls.project_name = project_name
+            cls.project_name_locked = True
+            cls._pending_logs.append(f"Lock project_name as {project_name!r}")
+
         # Override defaults with global config
         cls._load_yaml(Path(cls.config_filename))
 
         # Construct project path from it's dir and name
         cls.project_path = str(Path(cls.projects_dir) / cls.project_name)
 
-        # Load local configuration
+        # Load project's configuration
         if cls.project_path != ".":
-            local_path = Path(cls.project_path) / cls.config_filename
-            cls._load_yaml(local_path)
+            local_config_path = Path(cls.project_path) / cls.config_filename
+            cls._load_yaml(local_config_path)
 
         cls.input_dir = str(Path(cls.project_path) / cls.input_dirname)
         if cls.templates_dirname:
@@ -111,7 +134,4 @@ class Config:
         else:
             cls.templates_dir = cls.input_dir
         cls.output_dir = str(Path(cls.project_path) / cls.output_dirname)
-
-
-Config.apply_overrides()
-Config._init_logger()
+        cls._init_logger()

@@ -7,8 +7,11 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from config import Config
+from utils import make_parser
 
 
+args = make_parser("Render the project's templates").parse_args()
+Config.load_config(project_name=args.project_name)
 log = Config.log
 env = Environment(
     loader=FileSystemLoader(Config.templates_dir),
