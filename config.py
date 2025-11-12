@@ -3,7 +3,7 @@ from pathlib import Path
 
 import yaml
 
-from logger import Log
+from utils import Log
 
 
 class Config:
